@@ -2,7 +2,9 @@ package org.ajstark.LinuxShell.Shell;
 
 import org.ajstark.LinuxShell.CommandInfrastructure.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.Command;
-import org.ajstark.LinuxShell.CommandInfrastructure.EnvironmentVariables;
+import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.Logger.*;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.*;
 
@@ -15,12 +17,14 @@ import java.util.*;
  */
 public class LinuxShell  implements Runnable {
 
-    private boolean            debug;
     private Thread             threadCommand;
 
     private CurrentDirectory   currentDirectory;
 
-    private ShellInputConsole  inputConsole;
+    
+    private ShellStandardInput   standardInput;
+    private ShellStandardOutput  standardOutput;
+    private ShellStandardError   standardError;
     
     /**
      * Created by Albert on 11/8/16.
@@ -33,10 +37,12 @@ public class LinuxShell  implements Runnable {
      *
      */
     public LinuxShell() {
-        debug = false;
-
-        inputConsole = new ShellInputConsole();
-
+        ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
+        standardInput = factory.getShellStandardInput();
+    
+        standardOutput = null;
+        standardError  = null;
+        
         Properties envVariables     = new Properties();
         currentDirectory = new CurrentDirectory();
 
@@ -67,11 +73,28 @@ public class LinuxShell  implements Runnable {
 
     public void run() {
 
-        Thread shellThread = Thread.currentThread();
         boolean continueLooping = true;
-
+    
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+        
+        ShellStandardOutputFactory ouputFactory = ShellStandardOutputFactory.getFactory();
+        ShellStandardErrorFactory  errorFactory = ShellStandardErrorFactory.getFactory();
+        
+    
         while (  continueLooping ) {
-            String inputStr = inputConsole.getInputFromTerminal();
+            InputOutputData inputOutputData = standardInput.getInput();
+            String          inputStr        = inputOutputData.getData();
+            String          uuidStr         = inputOutputData.getUuidStr();
+            
+            if ( standardOutput == null ) {
+                standardOutput = ouputFactory.getShellStandardOutput( uuidStr );
+            }
+    
+            if ( standardError == null ) {
+                standardError = errorFactory.getShellStandardErrort( uuidStr );
+            }
+            
+            logger.logInfo( "LinuxShell", "run", "Command: " + inputStr );
 
             if ( inputStr.compareTo("END") == 0 ) {
                 continueLooping = false;
@@ -88,9 +111,10 @@ public class LinuxShell  implements Runnable {
 
             currentDirectory.addCmdToHistory( inputStr );
         }
-
-        System.out.println( "\n\nGOOD BYE!!!\n\n" );
-        System.out.flush();
+    
+        standardError.sendError( "\n\nGOOD BYE!!!\n\n"  );
+        
+        logger.logInfo( "LinuxShell", "run", "end of method call" );
     }
 
 
@@ -98,60 +122,54 @@ public class LinuxShell  implements Runnable {
      *  returns a Command object  if the input string was parsed correctly.  otherwise null
      */
     private Command parseInputStr( String inputString ) {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
 
         Command cmd = null;
         try {
-            CommandParser cmdParser = new CommandParser(currentDirectory, inputString);
+            CommandParser cmdParser = new CommandParser(currentDirectory, inputString, standardOutput, standardError );
 
             cmd = cmdParser.parse();
         } catch (CommandParsingException excp) {
-            System.out.println("Invalid Syntax For Command: " + excp.getCommandStrBeingParsed());
+            
+            String commandStrBeingParse = excp.getCommandStrBeingParsed();
+            standardError.sendError( "Invalid Syntax For Command: " + commandStrBeingParse  );
+            logger.logException( "LinuxShell", "parseInputStr",
+                                 "Invalid Syntax For Command: " + commandStrBeingParse , excp);
 
             String msg = excp.getMessage();
             if (msg != null) {
                 msg = msg.trim();
                 if ( msg.compareTo("") != 0 ) {
-                    System.out.println( excp.getMessage() );
+                    String message = excp.getMessage();
+                    logger.logError( "LinuxShell", "parseInputStr", message );
                 }
             }
-
-            if (debug) {
-                System.out.println("\n\nParams\n");
-                ArrayList<String> cmdList = excp.getCommandStrList();
-
-                Iterator<String> iter = cmdList.iterator();
-                while (iter.hasNext()) {
-                    String cmdStr = iter.next();
-                    System.out.println("    " + cmdStr);
-                }
-
-                System.out.println("");
-                System.out.println("");
-                excp.printStackTrace();
-            }
-
+            
             return null;
-        } catch (UnknowCommandException excp) {
-            System.out.println("Unrecognized Command Name: " + excp.getCommandStrBeingParsed());
+        }
+        catch (UnknowCommandException excp) {
+            String commandStrBeingParse = excp.getCommandStrBeingParsed();
+            standardError.sendError( "Unrecognized Command Name: " + commandStrBeingParse  );
+            logger.logException( "LinuxShell", "parseInputStr",
+                    "Unrecognized Command Name: " + commandStrBeingParse , excp);
 
             String msg = excp.getMessage();
             if (msg != null) {
                 msg = msg.trim();
                 if ( msg.compareTo("") != 0 ) {
-                    System.out.println( excp.getMessage());
+                    String message = excp.getMessage();
+                    logger.logError( "LinuxShell", "parseInputStr", message );
                 }
             }
-
-            if (debug) {
-                System.out.println("Command Name:                " + excp.getCommandName());
-                System.out.println("Class Name:                  " + excp.getClassName());
-                System.out.println("");
-
-                System.out.println("");
-                System.out.println("");
-                excp.printStackTrace();
-            }
-
+    
+            String commandName = excp.getCommandName();
+            logger.logError( "LinuxShell", "parseInputStr",
+                    "Command Name: " + commandName );
+    
+            String className = excp.getClassName();
+            logger.logError( "LinuxShell", "parseInputStr",
+                    "Command Name: " + excp.getClassName() );
+            
             return null;
         }
 
@@ -159,6 +177,8 @@ public class LinuxShell  implements Runnable {
     }
 
     private void waitForCmdToFinish( Command cmd ) {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+    
         try {
             boolean continueProcessing = true;
 
@@ -175,14 +195,11 @@ public class LinuxShell  implements Runnable {
                     }
                 }
             }
-        } catch (Exception excp) {
-            System.out.println("Exception:                   " + excp.getClass().getName());
-            System.out.println("Get Message:                 " + excp.getMessage());
-
-            System.out.println("");
-            System.out.println("");
-            excp.printStackTrace();
-
+        }
+        catch (Exception excp) {
+            logger.logException( "LinuxShell", "waitForCmdToFinish",
+                    "Exception: " + excp.getClass().getName() , excp);
+            logger.logError( "LinuxShell", "waitForCmdToFinish", excp.getMessage() );
         }
     }
 

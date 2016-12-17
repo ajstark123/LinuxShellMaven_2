@@ -6,6 +6,7 @@ import org.ajstark.LinuxShell.CommandInfrastructure.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.Command;
 import org.ajstark.LinuxShell.CommandInfrastructure.EnvironmentVariables;
 import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 /**
  * Created by Albert on 11/5/16.
@@ -23,14 +24,22 @@ public class CommandParser {
     private String commandListString;
 
     private EnvironmentVariables envVar;
-
-    public CommandParser( EnvironmentVariables envVar, String commandListString ) {
+    
+    private ShellStandardOutput shellStandardOutput;
+    private ShellStandardError  shellStandardError;
+    
+    
+    public CommandParser( EnvironmentVariables envVar, String commandListString,
+                          ShellStandardOutput shellStandardOutput, ShellStandardError standardError ) {
 
         this.commandListString = commandListString;
         this.commandListString = this.commandListString.trim();
 
         this.commandList = new ArrayList<BaseCommand>();
         this.envVar      = envVar;
+        
+        this.shellStandardOutput = shellStandardOutput;
+        this.shellStandardError  = shellStandardError;
     }
 
     public String getCommandString() {
@@ -80,7 +89,8 @@ public class CommandParser {
 
         CommandFactory factory = CommandFactory.getInstance();
 
-        BaseCommand cmd = factory.getCommand( commandStrEnvVar, commandParameter );
+        BaseCommand cmd = factory.getCommand( commandStrEnvVar, commandParameter,
+                                              shellStandardOutput, shellStandardError );
 
         cmd.parse( envVar, true );
 
@@ -108,7 +118,7 @@ public class CommandParser {
             ArrayList<String> commandParameter = tokenizeByWhiteSpace(command);
             commandParameter = parseSubstitueEnvVar( commandParameter );
 
-            BaseCommand cmd = factory.getCommand(command, commandParameter);
+            BaseCommand cmd = factory.getCommand(command, commandParameter, shellStandardOutput, shellStandardError );
 
             if (size != 1) {
                 // there are more them one command.  we need to pipe together the commands commands
@@ -122,8 +132,7 @@ public class CommandParser {
                 cmd.parse( envVar, true );
             } else {
                 //  there is only one command.  nothing to pipe together end output to the console
-                StandardOutConsole console = StandardOutConsole.getInstance();
-                cmd.setStandardOutput(console);
+                cmd.setStandardOutput( shellStandardOutput );
 
                 cmd.parse( envVar, false );
             }
@@ -132,9 +141,8 @@ public class CommandParser {
 
             commandList.add(cmd);
         }
-
-        StandardOut outConsole = StandardOutConsole.getInstance();
-        previousCommand.setStandardOutput( outConsole );
+        
+        previousCommand.setStandardOutput( shellStandardOutput );
     }
 
     private ArrayList<String> parseSubstitueEnvVar( ArrayList<String> commandParameter ) {

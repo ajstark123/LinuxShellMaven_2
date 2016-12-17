@@ -1,6 +1,11 @@
 package org.ajstark.LinuxShell.Shell;
 
 
+import org.ajstark.LinuxShell.Logger.*;
+
+import java.text.*;
+import java.util.*;
+
 /**
  * Created by Albert on 11/4/16.
  *
@@ -10,7 +15,22 @@ package org.ajstark.LinuxShell.Shell;
 public class LinuxShellServer {
 
     public static void main(String[] args) {
-
+    
+        LinuxShellLogger logger = null;
+        try {
+            logger = LinuxShellLogger.getLogger();
+        }
+        catch ( LoggerConfigurationException excp ) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm:ss");
+            Date date = new Date();
+            
+            System.err.println( "Date: " + dateFormat.format( date ) );
+            System.err.print( "Logger exception: " + excp.getMessage() );
+            excp.printStackTrace( System.err );
+            return;
+        }
+    
+        logger.logInfo( "LinuxShellServer", "main", "test of writing an error message to a file");
 
         System.out.println( "LinuxShell Version: " + LinuxShell.getVersion() );
         System.out.println( "TestDrive  Version: " + LinuxShellServer.getVersion() );
@@ -45,14 +65,22 @@ public class LinuxShellServer {
 
         }
         catch( Exception excp ) {
-            System.out.println( "Exception:                   " + excp.getClass().getName() );
-            System.out.println( "Get Message:                 " + excp. getMessage() );
+            SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm:ss");
+            Date date = new Date();
+    
+            System.err.println( "Date: " + dateFormat.format( date ) );
+            logger.logException( "LinuxShellServer", "main", "test of writing an error message to a file", excp );
+    
+            System.err.println( "Exception:                   " + excp.getClass().getName() );
+            System.err.println( "Get Message:                 " + excp. getMessage() );
 
-            System.out.println( "" );
-            System.out.println( "" );
+            System.err.println( "" );
+            System.err.println( "" );
             excp.printStackTrace();
-
         }
+    
+        logger.logInfo( "LinuxShellServer", "main", "end of method call");
+        logger.shutdown();
 
     }
     

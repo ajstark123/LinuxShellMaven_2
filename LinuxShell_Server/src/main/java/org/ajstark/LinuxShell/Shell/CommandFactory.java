@@ -2,6 +2,7 @@ package org.ajstark.LinuxShell.Shell;
 
 import org.ajstark.LinuxShell.CommandInfrastructure.BaseCommand;
 import org.ajstark.LinuxShell.CommandInfrastructure.UnknowCommandException;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.*;
 
@@ -40,7 +41,8 @@ class CommandFactory {
         return factory;
     }
 
-    BaseCommand getCommand( String commandStrBeingParsed, ArrayList<String> commandStrList)
+    BaseCommand getCommand(String commandStrBeingParsed, ArrayList<String> commandStrList,
+                           ShellStandardOutput shellStandardOutput, ShellStandardError shellStandardError)
             throws UnknowCommandException {
 
         if (commandStrList.isEmpty()) {
@@ -53,7 +55,7 @@ class CommandFactory {
         String className = map.get(commandName);
 
         if (className == null) {
-            throw new UnknowCommandException( commandStrBeingParsed, commandName, "Class Name Is Null"  );
+            throw new UnknowCommandException( commandStrBeingParsed, commandName, "Unknown Command"  );
         }
 
         BaseCommand cmd;
@@ -61,6 +63,8 @@ class CommandFactory {
             Class cmdObj = Class.forName(className);
 
             cmd = (BaseCommand) cmdObj.newInstance();
+            cmd.setShellStandardError(  shellStandardError  );
+            
         } catch (Exception excp) {
             UnknowCommandException missingCmdExcp = new UnknowCommandException( commandStrBeingParsed, commandName,
                                                                                 className );
