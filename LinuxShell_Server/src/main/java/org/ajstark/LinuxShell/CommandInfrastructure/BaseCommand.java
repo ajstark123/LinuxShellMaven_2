@@ -1,6 +1,7 @@
 package org.ajstark.LinuxShell.CommandInfrastructure;
 
 import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,7 +25,6 @@ import java.util.Iterator;
 public abstract class BaseCommand implements Command {
     private StandardInput input;
     private StandardOut   output;
-    private StandardOut   error;
 
 
     private String commandStrBeingParsed;
@@ -32,7 +32,10 @@ public abstract class BaseCommand implements Command {
     private ArrayList<String> commandStrList;
 
     private Thread threadCommand;
-
+    
+    private ShellStandardError  shellStandardError;
+    
+    
     public abstract void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException;
 
     public abstract void processCommandData( InputOutputData data );
@@ -40,7 +43,6 @@ public abstract class BaseCommand implements Command {
 
     protected BaseCommand () {
         threadCommand = null;
-        error = (StandardOut) StandardOutConsole.getInstance();
     }
 
 
@@ -110,17 +112,12 @@ public abstract class BaseCommand implements Command {
         //
         this.output = output;
     }
-
-    public StandardOut getStandardOutput() {
-        //
+    
+    public StandardOut getStandardOutput(){
         return output;
     }
-
-    public StandardOut getStandardError() {
-        //
-        return error;
-    }
-
+    
+    
     public void setCommandStrBeingParsed( String commandStrBeingParsed ) {
         this.commandStrBeingParsed  = commandStrBeingParsed;
     }
@@ -144,5 +141,13 @@ public abstract class BaseCommand implements Command {
 
         return threadCommand;
     }
-
+    
+    public void setShellStandardError( ShellStandardError shellStandardError ) {
+        this.shellStandardError = shellStandardError;
+    }
+    
+    public ShellStandardError getShellStandardError( ) {
+        return shellStandardError;
+    }
+    
 }
