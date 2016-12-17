@@ -2,6 +2,8 @@ package org.ajstark.LinuxShell.Command;
 
 import org.ajstark.LinuxShell.CommandInfrastructure.*;
 import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.Logger.*;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.io.*;
 import java.util.*;
@@ -212,6 +214,9 @@ public class GrepCommand extends ParametersFollowedByFileNameCommand {
     }
 
     private void grepFile( FileAttributes fileAttr ) {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+    
+    
         String fileName = fileAttr.getPath();
         File file = new File( fileName );
 
@@ -234,19 +239,21 @@ public class GrepCommand extends ParametersFollowedByFileNameCommand {
                 fileInputStream.close();
             }
             catch ( Exception excp ) {
-                StandardOut      stdErr     = super.getStandardError();
-                String           errMsg     = "Error reading or closing file: " + fileName + "\n" + excp.getMessage();
-                InputOutputData  errOutData = new InputOutputData( errMsg );
-                stdErr.put( errOutData );
+                ShellStandardError stdErr     = super.getShellStandardError();
+                String             errMsg     = "Error reading or closing file: " + fileName + "\n" + excp.getMessage();
+                stdErr.sendError( errMsg );
+    
+                logger.logException( "GrepCommand", "grepFile", errMsg , excp);
             }
             finally {
                 try {
                     fileInputStream.close();
                 } catch (Exception excp) {
-                    StandardOut      stdErr     = super.getStandardError();
-                    String           errMsg     = "Error closing file: " + fileName + "\n" + excp.getMessage();
-                    InputOutputData  errOutData = new InputOutputData( errMsg );
-                    stdErr.put( errOutData );
+                    ShellStandardError stdErr     = super.getShellStandardError();
+                    String             errMsg     = "Error closing file: " + fileName + "\n" + excp.getMessage();
+                    stdErr.sendError( errMsg );
+    
+                    logger.logException( "GrepCommand", "grepFile", errMsg , excp);
                 }
             }
         }
