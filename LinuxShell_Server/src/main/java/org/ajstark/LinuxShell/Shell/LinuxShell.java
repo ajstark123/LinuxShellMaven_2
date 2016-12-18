@@ -6,6 +6,8 @@ import org.ajstark.LinuxShell.InputOutput.*;
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
 
+import org.ajstark.LinuxShell.MQ.*;
+
 import java.util.*;
 
 
@@ -36,9 +38,13 @@ public class LinuxShell  implements Runnable {
      *
      *
      */
-    public LinuxShell() {
+    public LinuxShell() throws ShellInputOutputException {
+        System.out.println( "\nentering ctor");
+        
         ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
-        standardInput = factory.getShellStandardInput();
+    
+        MqEnvProperties.InputType inputType = MqEnvProperties.getEnvPropertyInputOutputType();
+        standardInput = factory.getShellStandardInput( inputType );
     
         standardOutput = null;
         standardError  = null;
@@ -72,49 +78,93 @@ public class LinuxShell  implements Runnable {
 
 
     public void run() {
-
+        int i = 0;
+        System.out.println( "\nentring run method");
         boolean continueLooping = true;
     
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        ShellStandardOutputFactory ouputFactory = ShellStandardOutputFactory.getFactory();
-        ShellStandardErrorFactory  errorFactory = ShellStandardErrorFactory.getFactory();
-        
-    
+        int retryCount = 0;
         while (  continueLooping ) {
-            InputOutputData inputOutputData = standardInput.getInput();
-            String          inputStr        = inputOutputData.getData();
-            String          uuidStr         = inputOutputData.getUuidStr();
-            
-            if ( standardOutput == null ) {
-                standardOutput = ouputFactory.getShellStandardOutput( uuidStr );
-            }
+            InputOutputData inputOutputData = null;
     
-            if ( standardError == null ) {
-                standardError = errorFactory.getShellStandardErrort( uuidStr );
+            try {
+                //System.out.println( "" + i + " before standardInput.getInput");
+                inputOutputData = standardInput.getInput();
+                //System.out.println( "" + i + " after standardInput.getInput" + inputOutputData.getData()  );
+                
+                //++i;
+    
+                retryCount = 0;
             }
-            
-            logger.logInfo( "LinuxShell", "run", "Command: " + inputStr );
-
-            if ( inputStr.compareTo("END") == 0 ) {
-                continueLooping = false;
-            }
-
-            if  ( (inputStr != null) && (inputStr.compareTo("") != 0)  && (inputStr.compareTo("END") != 0) ) {
-                Command cmd = parseInputStr( inputStr );
-
-                if ( cmd != null ) {
-                    cmd.execute();
-                    waitForCmdToFinish(cmd);
+            catch ( ShellInputOutputException excp ) {
+                ++retryCount;
+                
+                if ( retryCount == 3 ) {
+                    standardInput.cleanUp();
+    
+                    if ( standardOutput == null ) {
+                        standardOutput.cleanUp();
+                    }
+    
+                    if ( standardError == null ) {
+                        standardError.sendError( "Server Is Having Technical Difficulty. It is not accepting additional commands");
+                        standardError.cleanUp();
+                    }
+                  
+                    return;
                 }
             }
-
-            currentDirectory.addCmdToHistory( inputStr );
+    
+            if ( retryCount == 0 ) {
+                continueLooping = processInput( inputOutputData );
+            }
         }
     
         standardError.sendError( "\n\nGOOD BYE!!!\n\n"  );
+    
+        standardInput.cleanUp();
+        standardOutput.cleanUp();
+        standardError.cleanUp();
         
         logger.logInfo( "LinuxShell", "run", "end of method call" );
+    }
+    
+    private boolean processInput( InputOutputData inputOutputData ) {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+    
+        String          inputStr        = inputOutputData.getData();
+        String          uuidStr         = inputOutputData.getUuidStr();
+    
+        if ( standardOutput == null ) {
+            ShellStandardOutputFactory ouputFactory = ShellStandardOutputFactory.getFactory();
+            
+            standardOutput = ouputFactory.getShellStandardOutput( uuidStr );
+        }
+    
+        if ( standardError == null ) {
+            ShellStandardErrorFactory  errorFactory = ShellStandardErrorFactory.getFactory();
+            standardError = errorFactory.getShellStandardErrort( uuidStr );
+        }
+    
+        logger.logInfo( "LinuxShell", "run", "Command: " + inputStr );
+    
+        if ( inputStr.compareTo("END") == 0 ) {
+            return false;
+        }
+    
+        if  ( (inputStr != null) && (inputStr.compareTo("") != 0)  && (inputStr.compareTo("END") != 0) ) {
+            Command cmd = parseInputStr( inputStr );
+        
+            if ( cmd != null ) {
+                cmd.execute();
+                waitForCmdToFinish(cmd);
+            }
+        }
+    
+        currentDirectory.addCmdToHistory( inputStr );
+        
+        return true;
     }
 
 
