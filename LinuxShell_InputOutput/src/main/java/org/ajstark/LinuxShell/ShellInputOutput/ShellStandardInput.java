@@ -7,5 +7,7 @@ import org.ajstark.LinuxShell.InputOutput.*;
  */
 public interface ShellStandardInput {
     
-    public InputOutputData getInput();
+    public InputOutputData getInput() throws ShellInputOutputException;
+    
+    public void cleanUp();
 }

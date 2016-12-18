@@ -7,4 +7,6 @@ public interface ShellStandardError {
     public void sendError( String errStr );
     
     public String getUuidStr();
+    
+    public void cleanUp();
 }

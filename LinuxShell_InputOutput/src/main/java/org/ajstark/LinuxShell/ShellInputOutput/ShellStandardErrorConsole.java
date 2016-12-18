@@ -18,4 +18,8 @@ public class ShellStandardErrorConsole implements ShellStandardError {
     public String getUuidStr() {
         return uuidStr;
     }
+    
+    public void cleanUp() {
+        //empty body
+    }
 }

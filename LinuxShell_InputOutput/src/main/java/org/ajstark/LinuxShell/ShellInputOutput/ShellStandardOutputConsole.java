@@ -27,4 +27,8 @@ public class ShellStandardOutputConsole implements ShellStandardOutput {
     
         sendOutput( outStr );
     }
+    
+    public void cleanUp() {
+        //empty body
+    }
 }

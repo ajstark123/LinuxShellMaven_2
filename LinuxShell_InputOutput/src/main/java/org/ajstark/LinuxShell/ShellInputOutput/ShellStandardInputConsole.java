@@ -52,5 +52,9 @@ public class ShellStandardInputConsole implements ShellStandardInput {
         
         return inOutDate;
     }
+    
+    public void cleanUp() {
+        //empty body
+    }
 }
 
