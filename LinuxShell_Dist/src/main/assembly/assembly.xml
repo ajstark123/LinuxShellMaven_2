@@ -18,7 +18,15 @@
               <include>*.sh</include>
         </includes>
         <fileMode>0755</fileMode>
+      </fileSet>
 
+      <fileSet>
+          <directory>${project.build.directory}/bin_client</directory>
+          <outputDirectory>bin_client</outputDirectory>
+          <includes>
+              <include>*.sh</include>
+          </includes>
+          <fileMode>0755</fileMode>
       </fileSet>
       <fileSet>
         <directory>${project.build.directory}/logs</directory>
