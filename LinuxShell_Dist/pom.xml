@@ -67,6 +67,15 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
+                                    <groupId>com.rabbitmq</groupId>
+                                    <artifactId>amqp-client</artifactId>
+                                    <version>4.0.0</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib/rabbitmq</outputDirectory>
+                                </artifactItem>
+
+                                <artifactItem>
                                     <groupId>org.apache.logging.log4j</groupId>
                                     <artifactId>log4j-api</artifactId>
                                     <version>2.7</version>
@@ -107,6 +116,23 @@
                                     <outputDirectory>${project.build.directory}/lib/log4j</outputDirectory>
                                 </artifactItem>
 
+                                <artifactItem>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>slf4j-api</artifactId>
+                                    <version>1.7.22</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib/slf4j</outputDirectory>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>slf4j-simple</artifactId>
+                                    <version>1.7.22</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib/slf4j</outputDirectory>
+                                </artifactItem>
 
 
                             </artifactItems>
@@ -140,6 +166,7 @@
                             </resources>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>copy-resources-LinuxShell_Server</id>
                         <phase>package</phase>
@@ -151,25 +178,6 @@
                             <resources>
                                 <resource>
                                     <directory>../LinuxShell_Server/src/main/project_resources</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>copy-resources-LinuxShell_PojClient</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../LinuxShell_PojClient/src/main/project_resources</directory>
                                     <includes>
                                         <include>**</include>
                                     </includes>
@@ -216,7 +224,45 @@
                         </configuration>
                     </execution>
 
-                </executions>
+                    <execution>
+                        <id>copy-jar-LinuxShell_PojClient</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib/LinuxShellClient/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../LinuxShell_PojClient/target</directory>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>copy-resources-LinuxShell_PojClient</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../LinuxShell_PojClient/src/main/project_resources</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                 </executions>
             </plugin>
 
 
