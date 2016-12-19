@@ -7,17 +7,19 @@ import org.ajstark.LinuxShell.MQ.*;
  * Created by Albert on 12/18/16.
  */
 public class PublishToShell {
-    MqConnection connection;
-    MqPublisher  publisher;
+    private MqConnection connection;
+    private MqPublisher  publisher;
+    private String       uuid;
     
-    private PublishToShell( MqConnection connection, MqPublisher  publisher )  {
+    private PublishToShell( MqConnection connection, MqPublisher  publisher, String uuid )  {
         this.connection = connection;
         this.publisher  = publisher;
+        this.uuid       = uuid;
     }
         
 
     
-    public static PublishToShell getPublishToShell() throws ClientMqException {
+    public static PublishToShell getPublishToShell(String uuid ) throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         String queueName       = System.getProperty( "QueueName" );
@@ -33,8 +35,8 @@ public class PublishToShell {
         MqConnection connection = null;
         MqPublisher  publisher  = null;
         try {
-            connection = MqConnection.getMqConnection(queueName);
-            publisher   = connection.createMqPublisher();
+            connection = MqConnection.getMqConnection(queueName, uuid);
+            publisher   = connection.createMqPublisher( );
         }
         catch (MqException excp ) {
             ClientMqException inOutExcp = new ClientMqException( excp.getMessage() );
@@ -46,7 +48,7 @@ public class PublishToShell {
             throw inOutExcp;
         }
     
-        PublishToShell publishToShell = new PublishToShell( connection, publisher );
+        PublishToShell publishToShell = new PublishToShell( connection, publisher, uuid );
         
         return publishToShell;
     }
