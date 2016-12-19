@@ -12,10 +12,10 @@ import java.util.*;
 /**
  * Created by Albert on 12/18/16.
  */
-class MqClient implements Runnable {
+class MqClient extends MQClientBase {
     
     private Thread             threadCommand;
-    
+    private String             uuid;
     
     private ShellStandardInput  standardInput;
     private PublishToShell      publishToShell;
@@ -32,14 +32,16 @@ class MqClient implements Runnable {
      *
      *
      */
-    public MqClient()  throws Exception {
+    public MqClient( String uuid )  throws Exception {
+        this.uuid = uuid;
+        
         logger = LinuxShellLogger.getLogger();
     
         ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
         
-        standardInput = factory.getShellStandardInput( MqEnvProperties.InputType.CONSOLE );
+        standardInput = factory.getShellStandardInput( MqEnvProperties.InputType.CONSOLE, uuid );
         
-        publishToShell = PublishToShell.getPublishToShell();
+        publishToShell = PublishToShell.getPublishToShell( uuid );
 
         
         threadCommand = new Thread( this );
@@ -48,15 +50,15 @@ class MqClient implements Runnable {
     
     
     public void run() {
-        
         boolean continueLooping = true;
         
         int retryCount = 0;
-        while (  continueLooping ) {
+        while (  continueLooping  ) {
             InputOutputData inputOutputData = null;
             
             try {
                 inputOutputData = standardInput.getInput();
+                inputOutputData.setUuidStr( uuid );
             }
             catch ( ShellInputOutputException excp ) {
                 inputOutputData = null;
@@ -69,7 +71,7 @@ class MqClient implements Runnable {
                 System.out.println("inStr: " + inputStr);
     
                 try {
-                    publishToShell.publish(inputStr);
+                    publishToShell.publish( inputStr );
                     retryCount = 0;
                 }
                 catch (ClientMqException excp) {
