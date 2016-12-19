@@ -16,7 +16,7 @@ public class InputOutputData implements Serializable {
     public InputOutputData( String  data ) {
         this.data            = data;
         this.lastDataSent    = false;
-        this.uuidStr         = "CONSOLE";
+        this.uuidStr         = "";
     }
 
     public InputOutputData( ) {
