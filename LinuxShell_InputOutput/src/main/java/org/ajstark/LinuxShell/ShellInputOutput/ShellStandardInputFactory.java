@@ -14,14 +14,15 @@ public class ShellStandardInputFactory {
         return factory;
     }
     
-    public ShellStandardInput getShellStandardInput( MqEnvProperties.InputType inputOutputType ) throws ShellInputOutputException {
+    public ShellStandardInput getShellStandardInput( MqEnvProperties.InputType inputOutputType, String uuid ) throws ShellInputOutputException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         switch ( inputOutputType ) {
             case CONSOLE: {
                 return new ShellStandardInputConsole();
             }
-            case MQ: {
+            case MQ:
+            case MQ_CONSOLE: {
                 String queueName       = System.getProperty( "QueueName" );
                 if ( queueName == null ) {
                     ShellInputOutputException inOutExcp = new ShellInputOutputException( "missing MQ queue name" );
@@ -36,7 +37,7 @@ public class ShellStandardInputFactory {
                 MqConsumer   consumer   = null;
                 
                 try {
-                    connection = MqConnection.getMqConnection(queueName);
+                    connection = MqConnection.getMqConnection(queueName, uuid);
                     consumer   = connection.creatMqConsumer();
                 }
                 catch (MqException excp ) {

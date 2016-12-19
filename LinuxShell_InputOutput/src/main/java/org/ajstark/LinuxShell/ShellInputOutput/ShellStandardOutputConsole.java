@@ -13,7 +13,7 @@ public class ShellStandardOutputConsole implements ShellStandardOutput {
     }
     
     
-    public void sendOutput( String outStr ) {
+    private void sendOutput( String outStr ) {
         System.out.println( outStr );
         System.out.flush();
     }
@@ -23,9 +23,11 @@ public class ShellStandardOutputConsole implements ShellStandardOutput {
     }
     
     public void put( InputOutputData outData ){
-        String outStr = outData.getData();
+        if ( ! outData.isLastDataSent() ) {
+            String outStr = outData.getData();
     
-        sendOutput( outStr );
+            sendOutput(outStr);
+        }
     }
     
     public void cleanUp() {
