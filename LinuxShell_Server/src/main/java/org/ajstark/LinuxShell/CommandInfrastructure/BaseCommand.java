@@ -54,6 +54,18 @@ public abstract class BaseCommand implements Command {
 
     public void run() {
         processDataFromStardInput();
+    
+        StandardOut     stdOut = getStandardOutput();
+        InputOutputData data    = new InputOutputData(  );
+        if ( stdOut != null ) {
+            stdOut.put(data);
+        }
+    
+        ShellStandardError stdErr    = getShellStandardError();
+        InputOutputData    errMsgObj = new InputOutputData(  );
+        if ( stdErr != null ) {
+            stdErr.put(errMsgObj);
+        }
     }
 
     /*
