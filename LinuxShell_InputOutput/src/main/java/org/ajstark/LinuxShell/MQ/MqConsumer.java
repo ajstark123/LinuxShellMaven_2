@@ -29,7 +29,7 @@ public class MqConsumer {
             //++i;
             
             byte[] inOutDataByte = delivery.getBody();
-            
+    
             ByteArrayInputStream in        = new ByteArrayInputStream(inOutDataByte);
             ObjectInputStream    is        = new ObjectInputStream(in);
             InputOutputData      inputData = (InputOutputData) is.readObject();
