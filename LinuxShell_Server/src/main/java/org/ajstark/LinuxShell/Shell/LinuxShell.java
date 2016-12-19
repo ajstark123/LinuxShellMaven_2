@@ -39,12 +39,12 @@ public class LinuxShell  implements Runnable {
      *
      */
     public LinuxShell() throws ShellInputOutputException {
-        System.out.println( "\nentering ctor");
-        
         ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
     
+        UUID                      uuidObj   = UUID.randomUUID();
+        String                    uuid      = uuidObj.toString();
         MqEnvProperties.InputType inputType = MqEnvProperties.getEnvPropertyInputOutputType();
-        standardInput = factory.getShellStandardInput( inputType );
+        standardInput = factory.getShellStandardInput( inputType, uuid );
     
         standardOutput = null;
         standardError  = null;
@@ -79,7 +79,6 @@ public class LinuxShell  implements Runnable {
 
     public void run() {
         int i = 0;
-        System.out.println( "\nentring run method");
         boolean continueLooping = true;
     
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
@@ -89,31 +88,37 @@ public class LinuxShell  implements Runnable {
             InputOutputData inputOutputData = null;
     
             try {
-                //System.out.println( "" + i + " before standardInput.getInput");
                 inputOutputData = standardInput.getInput();
-                //System.out.println( "" + i + " after standardInput.getInput" + inputOutputData.getData()  );
-                
-                //++i;
-    
+   
                 retryCount = 0;
             }
             catch ( ShellInputOutputException excp ) {
                 ++retryCount;
                 
                 if ( retryCount == 3 ) {
-                    standardInput.cleanUp();
-    
-                    if ( standardOutput == null ) {
-                        standardOutput.cleanUp();
-                    }
-    
-                    if ( standardError == null ) {
-                        standardError.sendError( "Server Is Having Technical Difficulty. It is not accepting additional commands");
-                        standardError.cleanUp();
-                    }
-                  
+                    handleClosingStandaInOut();
                     return;
                 }
+            }
+            
+            try {
+                String uuidStr = inputOutputData.getUuidStr();
+                
+                ShellStandardOutputFactory ouputFactory = ShellStandardOutputFactory.getFactory();
+                standardOutput = ouputFactory.getShellStandardOutput(uuidStr);
+    
+                ShellStandardErrorFactory  errorFactory = ShellStandardErrorFactory.getFactory();
+                standardError = errorFactory.getShellStandardErrort( uuidStr );
+            }
+            catch ( ShellInputOutputException excp ) {
+                logger.logException( "LinuxShell", "run",
+                        "Cannot create StandardInput or StandardOut: " + inputOutputData.getData() , excp);
+                System.err.println( "Cannot create StandardInput or StandardOut: " + inputOutputData.getData() );
+                excp.printStackTrace( System.err );
+                System.err.flush();
+    
+                handleClosingStandaInOut();
+                return;
             }
     
             if ( retryCount == 0 ) {
@@ -121,32 +126,31 @@ public class LinuxShell  implements Runnable {
             }
         }
     
-        standardError.sendError( "\n\nGOOD BYE!!!\n\n"  );
-    
         standardInput.cleanUp();
-        standardOutput.cleanUp();
-        standardError.cleanUp();
-        
+        System.err.println( "\n\nGOOD BYE!\n\n" );
         logger.logInfo( "LinuxShell", "run", "end of method call" );
+    }
+    
+    private void handleClosingStandaInOut() {
+        standardInput.cleanUp();
+        if ( standardOutput != null ) {
+            standardOutput.cleanUp();
+        }
+    
+        if ( standardError != null ) {
+    
+    
+            InputOutputData errMsgObj = new InputOutputData( "Server Is Having Technical Difficulty. It is not accepting additional commands" );
+            standardError.put( errMsgObj );
+            standardError.cleanUp();
+        }
     }
     
     private boolean processInput( InputOutputData inputOutputData ) {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
         String          inputStr        = inputOutputData.getData();
-        String          uuidStr         = inputOutputData.getUuidStr();
-    
-        if ( standardOutput == null ) {
-            ShellStandardOutputFactory ouputFactory = ShellStandardOutputFactory.getFactory();
-            
-            standardOutput = ouputFactory.getShellStandardOutput( uuidStr );
-        }
-    
-        if ( standardError == null ) {
-            ShellStandardErrorFactory  errorFactory = ShellStandardErrorFactory.getFactory();
-            standardError = errorFactory.getShellStandardErrort( uuidStr );
-        }
-    
+        
         logger.logInfo( "LinuxShell", "run", "Command: " + inputStr );
     
         if ( inputStr.compareTo("END") == 0 ) {
@@ -166,7 +170,7 @@ public class LinuxShell  implements Runnable {
         
         return true;
     }
-
+    
 
     /*
      *  returns a Command object  if the input string was parsed correctly.  otherwise null
@@ -182,7 +186,10 @@ public class LinuxShell  implements Runnable {
         } catch (CommandParsingException excp) {
             
             String commandStrBeingParse = excp.getCommandStrBeingParsed();
-            standardError.sendError( "Invalid Syntax For Command: " + commandStrBeingParse  );
+    
+            InputOutputData errMsgObj = new InputOutputData( "Invalid Syntax For Command: " + commandStrBeingParse );
+    
+            standardError.put( errMsgObj  );
             logger.logException( "LinuxShell", "parseInputStr",
                                  "Invalid Syntax For Command: " + commandStrBeingParse , excp);
 
@@ -199,7 +206,10 @@ public class LinuxShell  implements Runnable {
         }
         catch (UnknowCommandException excp) {
             String commandStrBeingParse = excp.getCommandStrBeingParsed();
-            standardError.sendError( "Unrecognized Command Name: " + commandStrBeingParse  );
+    
+            InputOutputData errMsgObj = new InputOutputData( "Unrecognized Command Name: " + commandStrBeingParse  );
+            standardError.put( errMsgObj  );
+
             logger.logException( "LinuxShell", "parseInputStr",
                     "Unrecognized Command Name: " + commandStrBeingParse , excp);
 
