@@ -98,6 +98,12 @@ public class GrepCommand extends ParametersFollowedByFileNameCommand {
         }
 
         printOutput();
+    
+        ShellStandardError stdErr    = super.getShellStandardError();
+        InputOutputData    errMsgObj = new InputOutputData(  );
+        if ( stdErr != null ) {
+            stdErr.put(errMsgObj);
+        }
     }
 
 
@@ -241,7 +247,9 @@ public class GrepCommand extends ParametersFollowedByFileNameCommand {
             catch ( Exception excp ) {
                 ShellStandardError stdErr     = super.getShellStandardError();
                 String             errMsg     = "Error reading or closing file: " + fileName + "\n" + excp.getMessage();
-                stdErr.sendError( errMsg );
+    
+                InputOutputData errMsgObj = new InputOutputData( errMsg );
+                stdErr.put( errMsgObj );
     
                 logger.logException( "GrepCommand", "grepFile", errMsg , excp);
             }
@@ -251,7 +259,9 @@ public class GrepCommand extends ParametersFollowedByFileNameCommand {
                 } catch (Exception excp) {
                     ShellStandardError stdErr     = super.getShellStandardError();
                     String             errMsg     = "Error closing file: " + fileName + "\n" + excp.getMessage();
-                    stdErr.sendError( errMsg );
+    
+                    InputOutputData errMsgObj = new InputOutputData( errMsg );
+                    stdErr.put( errMsgObj );
     
                     logger.logException( "GrepCommand", "grepFile", errMsg , excp);
                 }

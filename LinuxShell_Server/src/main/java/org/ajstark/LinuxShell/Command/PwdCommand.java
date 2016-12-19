@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.ajstark.LinuxShell.InputOutput.InputOutputData;
 import org.ajstark.LinuxShell.CommandInfrastructure.BaseCommand;
 import org.ajstark.LinuxShell.CommandInfrastructure.CommandParsingException;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 /**
  * Created by Albert on 11/6/16.
@@ -29,6 +30,13 @@ public class PwdCommand extends BaseCommand {
             InputOutputData lastDataSent = new InputOutputData( );
             outPut.put( lastDataSent );
         }
+    
+        ShellStandardError stdErr    = super.getShellStandardError();
+        InputOutputData    errMsgObj = new InputOutputData(  );
+        if ( stdErr != null ) {
+            stdErr.put(errMsgObj);
+        }
+        
     }
 
     public void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException {

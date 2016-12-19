@@ -4,6 +4,7 @@ package org.ajstark.LinuxShell.Command;
 import org.ajstark.LinuxShell.CommandInfrastructure.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.EnvironmentVariables;
 import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.*;
 
@@ -17,8 +18,18 @@ import java.util.*;
 public class SetEnvVarCommand extends BaseCommand {
 
     public void run() {
-
-        // empty body
+    
+        StandardOut     stdOut = getStandardOutput();
+        InputOutputData data    = new InputOutputData(  );
+        if ( stdOut != null ) {
+            stdOut.put(data);
+        }
+        
+        ShellStandardError stdErr    = super.getShellStandardError();
+        InputOutputData    errMsgObj = new InputOutputData(  );
+        if ( stdErr != null ) {
+            stdErr.put(errMsgObj);
+        }
     }
 
     public void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException {

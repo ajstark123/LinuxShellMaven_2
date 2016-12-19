@@ -6,6 +6,7 @@ import org.ajstark.LinuxShell.InputOutput.StandardOut;
 
 import org.ajstark.LinuxShell.CommandInfrastructure.BaseCommand;
 import org.ajstark.LinuxShell.CommandInfrastructure.CommandParsingException;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.*;
 
@@ -45,6 +46,12 @@ public class EnvCommand extends BaseCommand {
 
         InputOutputData outputData = new InputOutputData(  );
         standardOut.put( outputData );
+    
+        ShellStandardError stdErr    = super.getShellStandardError();
+        InputOutputData            errMsgObj = new InputOutputData(  );
+        if ( stdErr != null ) {
+            stdErr.put(errMsgObj);
+        }
     }
 
     public void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException {
