@@ -5,6 +5,12 @@ import org.ajstark.LinuxShell.MQ.*;
 
 /**
  * Created by Albert on 12/18/16.
+ *
+ *
+ *
+ *
+ *
+ *
  */
 public class PublishToShell {
     private MqConnection connection;
