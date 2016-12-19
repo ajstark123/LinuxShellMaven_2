@@ -5,7 +5,7 @@ vhost.org.ajstark.LinuxShell
 #
 #  queue that the linux Shell accepts input to
 #
-exchange.org.ajstark.LinuxShell.input
-exchange.dead.letter.org.ajstark.LinuxShell.input
+exchange.org.ajstark.LinuxShell
+
 org.ajstark.LinuxShell.input
 
