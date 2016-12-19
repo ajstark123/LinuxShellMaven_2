@@ -42,6 +42,6 @@ export SLF4=$SLF4_LIB/slf4j-api-1.7.22.jar:$SLF4_LIB/slf4j-simple-1.7.22.jar
 
 
 
-java $LOGGER_CONFIG -DInputOutputType=MQ -DQueueName=org.ajstark.LinuxShell.input -classpath $SERVER_LIB:$IN_OUT_LIB:$SLF4:$RABBIT_MQ:$LOG4J_API:$LOG4J_CORE  org.ajstark.LinuxShell.Shell.LinuxShellServer
+java $LOGGER_CONFIG -DInputOutputType=MQ_CONSOLE -DQueueName=org.ajstark.LinuxShell.input -DExchangeName=exchange.org.ajstark.LinuxShell -classpath $SERVER_LIB:$IN_OUT_LIB:$SLF4:$RABBIT_MQ:$LOG4J_API:$LOG4J_CORE  org.ajstark.LinuxShell.Shell.LinuxShellServer
 
 
