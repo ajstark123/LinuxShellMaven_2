@@ -41,8 +41,7 @@ class CommandFactory {
         return factory;
     }
 
-    BaseCommand getCommand(String commandStrBeingParsed, ArrayList<String> commandStrList,
-                           ShellStandardOutput shellStandardOutput, ShellStandardError shellStandardError)
+    BaseCommand getCommand(String commandStrBeingParsed, ArrayList<String> commandStrList, String uuid )
             throws UnknowCommandException {
 
         if (commandStrList.isEmpty()) {
@@ -63,6 +62,16 @@ class CommandFactory {
             Class cmdObj = Class.forName(className);
 
             cmd = (BaseCommand) cmdObj.newInstance();
+    
+            ShellStandardError shellStandardError = null;
+            try {
+                 shellStandardError  = ShellUtil.createShellStandardError( uuid );
+            }
+            catch (ShellException excp) {
+                // do nothing
+                shellStandardError = null;
+            }
+            
             cmd.setShellStandardError(  shellStandardError  );
             
         } catch (Exception excp) {
@@ -78,5 +87,4 @@ class CommandFactory {
 
         return cmd;
     }
-
 }

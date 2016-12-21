@@ -10,11 +10,11 @@ import java.io.*;
  * Created by Albert on 12/18/16.
  */
 public class MqPublisherTopic {
-    private Channel channel;
-    private String  exchangeName;
-    private String  routingKey;
+    private MqChannel channel;
+    private String    exchangeName;
+    private String    routingKey;
     
-    MqPublisherTopic(  Channel channel, String exchangeName, String routingKey ) {
+    MqPublisherTopic(  MqChannel channel, String exchangeName, String routingKey ) {
         this.channel      = channel;
         this.exchangeName = exchangeName;
         this.routingKey   = routingKey;
@@ -34,7 +34,7 @@ public class MqPublisherTopic {
             out.flush();
             byte[] inOutDataBytes = bos.toByteArray();
             
-            channel.basicPublish( exchangeName, routingKey, null, inOutDataBytes );
+            channel.basicPublish( exchangeName, routingKey, inOutDataBytes );
         }
         catch ( Exception excp ) {
             logger.logException( "MqPublisherTopic", "publish",
@@ -51,11 +51,10 @@ public class MqPublisherTopic {
                 // ignore close exception
             }
         }
-        
-        
-        
-        
-        
+    }
+    
+    public void cleanUp() throws MqException {
+        channel.close();
     }
     
 }

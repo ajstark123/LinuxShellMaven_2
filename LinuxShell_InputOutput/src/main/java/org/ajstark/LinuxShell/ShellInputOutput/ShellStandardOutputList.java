@@ -41,6 +41,11 @@ public class ShellStandardOutputList implements ShellStandardOutput {
     }
     
     public void cleanUp() {
-        //empty body
+        Iterator<ShellStandardOutput> iter = list.iterator();
+    
+        while (iter.hasNext()) {
+            ShellStandardOutput stdOut = iter.next();
+            stdOut.cleanUp();
+        }
     }
 }

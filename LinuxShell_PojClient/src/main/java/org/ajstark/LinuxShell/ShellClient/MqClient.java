@@ -39,7 +39,7 @@ class MqClient extends MQClientBase {
     
         ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
         
-        standardInput = factory.getShellStandardInput( MqEnvProperties.InputType.CONSOLE, uuid );
+        standardInput = factory.getShellStandardInput( MqEnvProperties.InputType.CONSOLE );
         
         publishToShell = PublishToShell.getPublishToShell(  uuid );
     

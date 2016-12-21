@@ -10,11 +10,9 @@ import org.ajstark.LinuxShell.InputOutput.*;
 public class ReceiveFromShell {
     
     
-    MqConnection connection;
     MqConsumer   consumer;
     
-    private ReceiveFromShell(MqConnection connection, MqConsumer consumer) {
-        this.connection = connection;
+    private ReceiveFromShell( MqConsumer consumer) {
         this.consumer = consumer;
     }
     
@@ -34,8 +32,8 @@ public class ReceiveFromShell {
         MqConnection connection = null;
         MqConsumer   consumer   = null;
         try {
-            connection = MqConnection.getMqConnection( queueName, uuid);
-            consumer = connection.creatMqConsumerTopic( outputType  );
+            connection = MqConnection.getMqConnection( );
+            consumer = connection.creatMqConsumerTopic( outputType, uuid  );
         }
         catch (MqException excp) {
             ClientMqException inOutExcp = new ClientMqException(excp.getMessage());
@@ -47,7 +45,7 @@ public class ReceiveFromShell {
             throw inOutExcp;
         }
     
-        ReceiveFromShell receiveFromShell = new ReceiveFromShell(connection, consumer);
+        ReceiveFromShell receiveFromShell = new ReceiveFromShell( consumer );
         
         return receiveFromShell;
     }
@@ -72,16 +70,14 @@ public class ReceiveFromShell {
     public void cleanUp() {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        if (connection != null) {
+        if (consumer != null) {
             try {
-                connection.close();
+                consumer.cleanUp();
             }
             catch (Exception excp) {
                 logger.logException("ReceiveFromShell", "cleanUp",
                         "cannot close MQ connection", excp);
             }
         }
-        
-        connection = null;
     }
 }

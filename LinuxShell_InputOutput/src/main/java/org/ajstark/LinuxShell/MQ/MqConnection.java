@@ -14,27 +14,24 @@ import java.util.*;
  * Created by Albert on 12/18/16.
  */
 public class MqConnection {
-    private String           queueName;
-    private Connection       connectionMQ;
-    private Channel          channel;
-    private String           uuid;
     
-    private LinuxShellLogger logger;
+    private static MqConnection mqConnection = null;
+    private Connection          connectionMQ;
+    private LinuxShellLogger    logger;
     
-    private MqConnection( String queueName, Connection connectionMQ, Channel channel, String uuid )  {
-        this.queueName    = queueName;
+    private MqConnection( Connection connectionMQ )  {
         this.connectionMQ = connectionMQ;
-        this.channel      = channel;
-        this.uuid         = uuid;
     
         this.logger       = LinuxShellLogger.getLogger();
     }
     
-    public static MqConnection getMqConnection( String queueName, String uuid ) throws MqException {
+    public static MqConnection getMqConnection( ) throws MqException {
+        
+        if ( mqConnection != null ) {
+            return mqConnection;
+        }
     
         Connection       connectionMQ;
-        Channel          channel       = null;
-             
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(        "localhost" );
     
@@ -44,9 +41,6 @@ public class MqConnection {
         connectionMQ = null;
         try {
             connectionMQ = factory.newConnection();
-        
-            channel = connectionMQ.createChannel();
-            
         }
         catch ( Exception excp ) {
             logger.logException( "MqConnection", "getMqConnection",
@@ -56,18 +50,22 @@ public class MqConnection {
             inOutExcp.initCause( excp );
             closeMqConnection( connectionMQ, inOutExcp );
         }
-   
-        MqConnection connection = new MqConnection( queueName, connectionMQ, channel, uuid );
+    
+        mqConnection = new MqConnection( connectionMQ );
         
-        return connection;
+        return mqConnection;
     }
     
     
-    public MqConsumer creatMqConsumer(  ) throws MqException {
-    
+    public MqConsumer creatMqConsumer( String queueName ) throws MqException {
+        
         QueueingConsumer consumerMQ = null;
     
+        MqChannel mqChannel = null;
         try {
+            Channel   channel   = connectionMQ.createChannel();
+            mqChannel           = new MqChannel( channel );
+    
             channel.queueDeclare(queueName, false, false, false, null);
             
             consumerMQ = new QueueingConsumer(channel);
@@ -83,13 +81,13 @@ public class MqConnection {
             closeMqConnection( connectionMQ, inOutExcp );;
         }
     
-        MqConsumer  consumer = new MqConsumer( consumerMQ );
+        MqConsumer  consumer = new MqConsumer( consumerMQ, mqChannel );
         
         return consumer;
     }
     
     
-    public MqConsumer creatMqConsumerTopic( MqEnvProperties.OutputType outputType ) throws MqException {
+    public MqConsumer creatMqConsumerTopic( MqEnvProperties.OutputType outputType, String uuid ) throws MqException {
     
     
         String exchangeName = MqEnvProperties.getExchangeName() + "." + MqEnvProperties.getOutputType( outputType );
@@ -103,8 +101,12 @@ public class MqConnection {
         
         String routingKey = MqEnvProperties.getOutputType( outputType ) + "." + uuid;
         
+        MqChannel mqChannel = null;
         QueueingConsumer consumerMQ = null;
         try {
+            Channel channel = connectionMQ.createChannel();
+            mqChannel       = new MqChannel( channel );
+            
             channel.exchangeDeclare(exchangeName, "topic");
             String queueName = channel.queueDeclare().getQueue();
             channel.queueBind(queueName, exchangeName, routingKey);
@@ -124,16 +126,20 @@ public class MqConnection {
             closeMqConnection( connectionMQ, inOutExcp );;
         }
         
-        MqConsumer  consumer = new MqConsumer( consumerMQ );
+        MqConsumer  consumer = new MqConsumer( consumerMQ, mqChannel );
         
         return consumer;
     }
     
     
     
-    public MqPublisher createMqPublisher( ) throws MqException {
+    public MqPublisher createMqPublisher( String queueName, String uuid ) throws MqException {
     
+        MqChannel mqChannel = null;
         try {
+            Channel   channel   = connectionMQ.createChannel();
+            mqChannel = new MqChannel( channel );
+            
             channel.queueDeclare(queueName, false, false, false, null);
         }
         catch (IOException excp ) {
@@ -146,11 +152,11 @@ public class MqConnection {
             closeMqConnection( connectionMQ, inOutExcp );;
         }
             
-        return new MqPublisher( channel, queueName, uuid ) ;
+        return new MqPublisher( mqChannel, queueName, uuid ) ;
     }
     
     
-    public MqPublisherTopic createMqPublisherTopic(  MqEnvProperties.OutputType outputType ) throws MqException {
+    public MqPublisherTopic createMqPublisherTopic(  MqEnvProperties.OutputType outputType, String uuid ) throws MqException {
     
         String exchangeName = MqEnvProperties.getExchangeName() + "." + MqEnvProperties.getOutputType( outputType );
         if ( exchangeName == null ) {
@@ -163,7 +169,11 @@ public class MqConnection {
         
         String routingKey = routingKey = MqEnvProperties.getOutputType( outputType ) + "." + uuid;
     
+        MqChannel mqChannel = null;
         try {
+            Channel   channel   = connectionMQ.createChannel();
+            mqChannel = new MqChannel( channel );
+            
             channel.exchangeDeclare( exchangeName,"topic");
         }
         catch (IOException excp ) {
@@ -176,13 +186,11 @@ public class MqConnection {
             closeMqConnection( connectionMQ, inOutExcp );;
         }
         
-        return new MqPublisherTopic( channel, exchangeName, routingKey ) ;
+        return new MqPublisherTopic( mqChannel, exchangeName, routingKey ) ;
     }
     
     
     public void close() throws MqException {
-        closeMqChannel( channel );
-    
         closeMqConnection( connectionMQ, null );
     }
     
@@ -195,6 +203,7 @@ public class MqConnection {
                 if (connectionMQ.isOpen()) {
                     connectionMQ.close();
                 }
+                connectionMQ = null;
     
                 if (inOutExcp != null) {
                     throw inOutExcp;
@@ -216,26 +225,5 @@ public class MqConnection {
             }
         }
     }
-    
-    
-    private static void closeMqChannel( Channel channel ) {
-        LinuxShellLogger logger = LinuxShellLogger.getLogger();
-        
-        if ( channel != null) {
-            try {
-                if ( channel.isOpen() ) {
-                    channel.close();
-                }
-            }
-            catch ( Exception excp ) {
-                logger.logException("MqConnection", "closeMqChannel",
-                        "cannot close MQ channel", excp);
-            }
-        }
-     }
-    
-     public boolean isOpen() {
-        return connectionMQ.isOpen();
-     }
     
 }

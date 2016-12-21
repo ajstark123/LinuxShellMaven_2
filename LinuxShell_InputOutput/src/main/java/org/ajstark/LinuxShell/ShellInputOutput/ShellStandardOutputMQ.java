@@ -9,14 +9,12 @@ import org.ajstark.LinuxShell.MQ.*;
  */
 public class ShellStandardOutputMQ implements ShellStandardOutput {
     private             String           uuidStr;
-    private             MqConnection     connection;
     private             MqPublisherTopic publisher;
     private             LinuxShellLogger logger;
     
     
-    ShellStandardOutputMQ( String uuidStr, MqConnection connection, MqPublisherTopic   publisher ) {
+    ShellStandardOutputMQ( String uuidStr, MqPublisherTopic   publisher ) {
         this.uuidStr    = uuidStr;
-        this.connection = connection;
         this.publisher  = publisher;
         this.logger     = LinuxShellLogger.getLogger();
     }
@@ -49,11 +47,11 @@ public class ShellStandardOutputMQ implements ShellStandardOutput {
     
     public void cleanUp() {
         try {
-            connection.close();
+            publisher.cleanUp();
         }
         catch ( MqException excp ) {
             logger.logException( "ShellStandardOutputMQ", "cleanUp",
-                    "could not close the connection", excp);
+                    "could not clean up MQ", excp);
         }
     }
 }

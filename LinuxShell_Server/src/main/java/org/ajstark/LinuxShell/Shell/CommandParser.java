@@ -6,6 +6,7 @@ import org.ajstark.LinuxShell.CommandInfrastructure.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.Command;
 import org.ajstark.LinuxShell.CommandInfrastructure.EnvironmentVariables;
 import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 /**
@@ -27,60 +28,115 @@ public class CommandParser {
     
     private ShellStandardOutput shellStandardOutput;
     private ShellStandardError  shellStandardError;
+    private String              uuid;
+    
+    private LinuxShellLogger    logger;
     
     
     public CommandParser( EnvironmentVariables envVar,
-                          String               commandListString,
-                          ShellStandardOutput  shellStandardOutput,
-                          ShellStandardError   shellStandardError ) {
+                          InputOutputData       inputOutputData ) throws ShellException {
+        this.logger = LinuxShellLogger.getLogger();
 
-        this.commandListString = commandListString;
+        this.commandListString = inputOutputData.getData();
         this.commandListString = this.commandListString.trim();
 
         this.commandList = new ArrayList<BaseCommand>();
         this.envVar      = envVar;
         
-        this.shellStandardOutput = shellStandardOutput;
-        this.shellStandardError  = shellStandardError;
-    }
+        this.uuid = inputOutputData.getUuidStr();
+    
+        this.shellStandardOutput = null;
+        this.shellStandardError  = null;
+    
+        try {
+            shellStandardOutput = ShellUtil.createShellStandardOutput( uuid );
+            shellStandardError  = ShellUtil.createShellStandardError( uuid );
+        }
+        catch (ShellException excp) {
+            if ( shellStandardOutput != null ) {
+                shellStandardOutput.cleanUp();
+            }
+    
+            if ( shellStandardError != null ) {
+                shellStandardError.cleanUp();
+            }
+            
+            throw excp;
+        }
+     }
 
     public String getCommandString() {
 
         return commandListString;
     }
 
-    public Command parse()
-            throws CommandParsingException,
-                   UnknowCommandException {
+    public Command parse()  {
 
-
-        // CommandFactory factory = CommandFactory.getInstance();
-
-        // check to see if this command s are seperated by semi colon
-        ArrayList<String> arrCommandSemiColon = tokenizeByDeliminator(commandListString, ";");
-
-        Iterator<String>  iterSemiColon       = arrCommandSemiColon.iterator();
-
-        while (iterSemiColon.hasNext()) {
-
-             String commandStr = iterSemiColon.next();
-
-
-            int indexOf = commandStr.indexOf( '=' );
-            if ( indexOf >= 0 ) {
-                parseEnvironmentVariable( commandStr );
+        try {
+            // CommandFactory factory = CommandFactory.getInstance();
+    
+            // check to see if this command s are seperated by semi colon
+            ArrayList<String> arrCommandSemiColon = tokenizeByDeliminator(commandListString, ";");
+    
+            Iterator<String> iterSemiColon = arrCommandSemiColon.iterator();
+    
+            while (iterSemiColon.hasNext()) {
+        
+                String commandStr = iterSemiColon.next();
+        
+        
+                int indexOf = commandStr.indexOf('=');
+                if (indexOf >= 0) {
+                    parseEnvironmentVariable(commandStr);
+                }
+                else {
+                    parsePipedCommands(commandStr);
+                }
             }
-            else {
-                parsePipedCommands(commandStr);
-            }
+    
+            CommandCollection cmdCol = new CommandCollection(commandListString, commandList);
+    
+            return cmdCol;
         }
-
-        CommandCollection cmdCol = new CommandCollection( commandListString, commandList );
-
-        return cmdCol;
+        catch (CommandParsingException excp) {
+    
+            String commandStrBeingParse = excp.getCommandStrBeingParsed();
+            InputOutputData errMsgObj = new InputOutputData( "Invalid Syntax For Command: " + commandStrBeingParse );
+    
+            shellStandardError.put( errMsgObj  );
+            
+            logger.logException( "CommandParser", "parse",
+                    "Invalid Syntax For Command: " + commandStrBeingParse , excp);
+    
+            shellStandardOutput.cleanUp();
+            shellStandardError.cleanUp();
+            
+            return null;
+        }
+        catch (UnknowCommandException excp) {
+            String commandStrBeingParse = excp.getCommandStrBeingParsed();
+            String commandName = excp.getCommandName();
+    
+            InputOutputData errMsgObj = new InputOutputData( "Unrecognized Command Name: " + commandStrBeingParse );
+            shellStandardError.put( errMsgObj  );
+    
+            logger.logException( "CommandParser", "CommandParser",
+                    "Unrecognized Command Name: " + commandStrBeingParse +
+                            " Command Name: " + commandName + " Class Name: " + excp.getClassName(), excp);
+    
+            shellStandardOutput.cleanUp();
+            shellStandardError.cleanUp();
+            
+            return null;
+        }
     }
 
 
+    
+    
+    
+    
+    
     private void parseEnvironmentVariable( String commandStr )
             throws CommandParsingException,
             UnknowCommandException {
@@ -91,8 +147,8 @@ public class CommandParser {
 
         CommandFactory factory = CommandFactory.getInstance();
 
-        BaseCommand cmd = factory.getCommand( commandStrEnvVar, commandParameter,
-                                              shellStandardOutput, shellStandardError );
+        BaseCommand cmd = factory.getCommand( commandStrEnvVar, commandParameter, uuid) ;
+                                              
 
         cmd.parse( envVar, true );
 
@@ -102,16 +158,16 @@ public class CommandParser {
 
     private void parsePipedCommands( String commandStr )
             throws CommandParsingException,
-            UnknowCommandException {
+                   UnknowCommandException {
         // check to see if this command has any commands pipped together
-
+    
         CommandFactory factory = CommandFactory.getInstance();
-
+    
         ArrayList<String> arrCommandPipe = tokenizeByDeliminator(commandStr, "|");
-
-        int size = arrCommandPipe.size();
+    
+        int         size            = arrCommandPipe.size();
         BaseCommand previousCommand = null;
-
+        
         Iterator<String> iterPipe = arrCommandPipe.iterator();
         while (iterPipe.hasNext()) {
 
@@ -119,8 +175,9 @@ public class CommandParser {
 
             ArrayList<String> commandParameter = tokenizeByWhiteSpace(command);
             commandParameter = parseSubstitueEnvVar( commandParameter );
+            
 
-            BaseCommand cmd = factory.getCommand(command, commandParameter, shellStandardOutput, shellStandardError );
+            BaseCommand cmd = factory.getCommand(command, commandParameter, uuid );
 
             if (size != 1) {
                 // there are more them one command.  we need to pipe together the commands commands
@@ -132,9 +189,20 @@ public class CommandParser {
                 }
 
                 cmd.parse( envVar, true );
-            } else {
+            }
+            else {
                 //  there is only one command.  nothing to pipe together end output to the console
-                cmd.setStandardOutput( shellStandardOutput );
+    
+                ShellStandardOutput standardOutput = null;
+                try {
+                    standardOutput = ShellUtil.createShellStandardOutput( uuid );
+                }
+                catch (ShellException excp) {
+                    // do nothing
+                    standardOutput = null;
+                }
+                
+                cmd.setStandardOutput( standardOutput );
 
                 cmd.parse( envVar, false );
             }
@@ -143,8 +211,16 @@ public class CommandParser {
 
             commandList.add(cmd);
         }
-        
-        previousCommand.setStandardOutput( shellStandardOutput );
+    
+        ShellStandardOutput standardOutput = null;
+        try {
+            standardOutput = ShellUtil.createShellStandardOutput( uuid );
+        }
+        catch (ShellException excp) {
+            // do nothing
+            standardOutput = null;
+        }
+        previousCommand.setStandardOutput( standardOutput );
     }
 
     private ArrayList<String> parseSubstitueEnvVar( ArrayList<String> commandParameter ) {

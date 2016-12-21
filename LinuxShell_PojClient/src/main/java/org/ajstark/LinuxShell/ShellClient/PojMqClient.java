@@ -68,7 +68,16 @@ public class PojMqClient {
         }
     
         waitForChildThreadToEnd( client );
-        
+    
+    
+        try {
+            MqConnection mqConnection = MqConnection.getMqConnection();
+            mqConnection.close();
+        }
+        catch( MqException excp ) {
+            logger.logException( "LinuxShellServer", "main",  "can not close connection", excp );
+        }
+
         logger.logInfo( "LinuxShellServer", "main", "end of method call");
         logger.shutdown();
     

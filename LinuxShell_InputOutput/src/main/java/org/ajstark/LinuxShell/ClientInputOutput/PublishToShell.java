@@ -13,12 +13,10 @@ import org.ajstark.LinuxShell.MQ.*;
  *
  */
 public class PublishToShell {
-    private MqConnection connection;
     private MqPublisher  publisher;
     private String       uuid;
     
-    private PublishToShell( MqConnection connection, MqPublisher  publisher, String uuid )  {
-        this.connection = connection;
+    private PublishToShell( MqPublisher  publisher, String uuid )  {
         this.publisher  = publisher;
         this.uuid       = uuid;
     }
@@ -41,8 +39,8 @@ public class PublishToShell {
         MqConnection connection = null;
         MqPublisher  publisher  = null;
         try {
-            connection = MqConnection.getMqConnection( queueName, uuid);
-            publisher   = connection.createMqPublisher( );
+            connection = MqConnection.getMqConnection( );
+            publisher   = connection.createMqPublisher( queueName, uuid );
         }
         catch (MqException excp ) {
             ClientMqException inOutExcp = new ClientMqException( excp.getMessage() );
@@ -54,7 +52,7 @@ public class PublishToShell {
             throw inOutExcp;
         }
     
-        PublishToShell publishToShell = new PublishToShell( connection, publisher, uuid );
+        PublishToShell publishToShell = new PublishToShell( publisher, uuid );
         
         return publishToShell;
     }
@@ -78,17 +76,13 @@ public class PublishToShell {
     public void cleanUp() {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        if ( connection != null) {
             try {
-                connection.close();
+                publisher.cleanUp();
             }
             catch ( Exception excp ) {
                 logger.logException("ShellStandardInputMQ", "cleanUp",
                         "cannot close MQ connectionr", excp);
             }
-        }
-        
-        connection = null;
     }
     
 }

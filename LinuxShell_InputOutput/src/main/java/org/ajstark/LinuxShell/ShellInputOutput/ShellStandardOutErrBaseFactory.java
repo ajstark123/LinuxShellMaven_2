@@ -11,23 +11,13 @@ public class ShellStandardOutErrBaseFactory {
     
     
     
-    public MqConnection getMqConnection( String uuid ) throws ShellInputOutputException {
+    public MqConnection getMqConnection( ) throws ShellInputOutputException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
-        
-        String queueName = System.getProperty("QueueName");
-        if (queueName == null) {
-            ShellInputOutputException inOutExcp = new ShellInputOutputException("missing MQ queue name");
-            
-            logger.logException("ShellStandardOutErrBaseFactory", "getShellStandardMqOutErr",
-                    "missing MQ queue name", inOutExcp);
-            
-            throw inOutExcp;
-        }
         
         MqConnection       connection = null;
         
         try {
-            connection = MqConnection.getMqConnection( queueName, uuid);
+            connection = MqConnection.getMqConnection();
         }
         catch (MqException excp) {
             ShellInputOutputException inOutExcp = new ShellInputOutputException(excp.getMessage());
@@ -61,7 +51,7 @@ public class ShellStandardOutErrBaseFactory {
         MqPublisherTopic   publisher  = null;
         
         try {
-            publisher = connection.createMqPublisherTopic( outType );
+            publisher = connection.createMqPublisherTopic( outType, uuid );
         }
         catch (MqException excp) {
             ShellInputOutputException inOutExcp = new ShellInputOutputException(excp.getMessage());

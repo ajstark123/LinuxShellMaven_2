@@ -14,7 +14,7 @@ public class ShellStandardInputFactory {
         return factory;
     }
     
-    public ShellStandardInput getShellStandardInput( MqEnvProperties.InputType inputOutputType, String uuid ) throws ShellInputOutputException {
+    public ShellStandardInput getShellStandardInput( MqEnvProperties.InputType inputOutputType ) throws ShellInputOutputException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         switch ( inputOutputType ) {
@@ -37,8 +37,8 @@ public class ShellStandardInputFactory {
                 MqConsumer   consumer   = null;
                 
                 try {
-                    connection = MqConnection.getMqConnection( queueName, uuid);
-                    consumer   = connection.creatMqConsumer();
+                    connection = MqConnection.getMqConnection( );
+                    consumer   = connection.creatMqConsumer( queueName );
                 }
                 catch (MqException excp ) {
                     ShellInputOutputException inOutExcp = new ShellInputOutputException( excp.getMessage() );
@@ -50,7 +50,7 @@ public class ShellStandardInputFactory {
                     throw inOutExcp;
                 }
                 
-                return new ShellStandardInputMQ( connection, consumer );
+                return new ShellStandardInputMQ( consumer );
             }
             default: {
                 return new ShellStandardInputConsole();

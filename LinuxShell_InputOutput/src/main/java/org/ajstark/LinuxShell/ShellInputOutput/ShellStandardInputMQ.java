@@ -13,10 +13,8 @@ import org.ajstark.LinuxShell.MQ.*;
  */
 public class ShellStandardInputMQ implements ShellStandardInput {
     private MqConsumer    consumer;
-    private MqConnection  connection;
     
-    ShellStandardInputMQ( MqConnection connection, MqConsumer consumer )  {
-         this.connection = connection;
+    ShellStandardInputMQ( MqConsumer consumer )  {
          this.consumer   = consumer;
     }
     
@@ -43,18 +41,14 @@ public class ShellStandardInputMQ implements ShellStandardInput {
     public void cleanUp() {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        if ( connection != null) {
-            try {
-                connection.close();
-            }
-            catch ( Exception excp ) {
-                logger.logException("ShellStandardInputMQ", "cleanUp",
-                        "cannot close MQ connectionr", excp);
-            }
+        try {
+            consumer.cleanUp();
         }
-    
-        connection = null;
-    }
+        catch ( Exception excp ) {
+                logger.logException("ShellStandardInputMQ", "cleanUp",
+                        "cannot clean up MQ", excp);
+        }
+     }
     
     
     

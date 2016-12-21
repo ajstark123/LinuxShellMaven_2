@@ -42,18 +42,18 @@ public class ShellStandardOutputFactory extends ShellStandardOutErrBaseFactory {
     private ShellStandardOutputMQ createShellStandardOutputMQ( String uuidStr ) throws ShellInputOutputException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        ShellStandardOutputMQ outMq = null;
         try {
-            MqConnection      connection = getMqConnection( uuidStr );
-            MqPublisherTopic  publisher  = getMqPublisherTopic( uuidStr, MqEnvProperties.OutputType.StandardOut, connection );
+            MqConnection      connection = MqConnection.getMqConnection();
+            MqPublisherTopic  publisher  = connection.createMqPublisherTopic( MqEnvProperties.OutputType.StandardOut,  uuidStr );
         
-            return new ShellStandardOutputMQ( uuidStr, connection, publisher);
+            return new ShellStandardOutputMQ( uuidStr, publisher);
         }
-        catch( ShellInputOutputException excp ) {
+        catch( Exception excp ) {
             logger.logError("ShellStandardOutputFactory", "ShellStandardOutputMQ",
                     excp.getMessage() );
-        
-            throw excp;
+    
+            ShellInputOutputException newExcp = new ShellInputOutputException( excp.getMessage() );
+            throw newExcp;
         }
     }
     

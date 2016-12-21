@@ -10,14 +10,12 @@ import org.ajstark.LinuxShell.MQ.*;
 public class ShellStandardErrorMq  implements ShellStandardError {
     
     private String           uuidStr;
-    private MqConnection     connection;
     private MqPublisherTopic publisher;
     private LinuxShellLogger logger;
     
     
     ShellStandardErrorMq( String uuidStr, MqConnection connection, MqPublisherTopic   publisher ) {
         this.uuidStr    = uuidStr;
-        this.connection = connection;
         this.publisher  = publisher;
         this.logger     = LinuxShellLogger.getLogger();
     }
@@ -50,11 +48,11 @@ public class ShellStandardErrorMq  implements ShellStandardError {
     
     public void cleanUp() {
         try {
-            connection.close();
+            publisher.cleanUp();
         }
         catch ( MqException excp ) {
             logger.logException( "ShellStandardErrorMq", "cleanUp",
-                    "could not close the connection", excp);
+                    "could not clean up MQ", excp);
         }
     }
 }

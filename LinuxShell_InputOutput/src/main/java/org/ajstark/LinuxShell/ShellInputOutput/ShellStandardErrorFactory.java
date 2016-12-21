@@ -43,7 +43,7 @@ public class ShellStandardErrorFactory extends ShellStandardOutErrBaseFactory  {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
         try {
-            MqConnection     connection = getMqConnection( uuidStr );
+            MqConnection     connection = getMqConnection( );
             
             MqPublisherTopic publisher  = getMqPublisherTopic( uuidStr, MqEnvProperties.OutputType.StandardErr, connection );
         

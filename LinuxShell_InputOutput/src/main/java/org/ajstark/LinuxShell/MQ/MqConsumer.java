@@ -10,12 +10,13 @@ import org.ajstark.LinuxShell.Logger.*;
  * Created by Albert on 12/18/16.
  */
 public class MqConsumer {
+    private MqChannel        channel;
     private QueueingConsumer consumerMQ;
-    private int i;
+
     
-    MqConsumer( QueueingConsumer consumerMQ ) {
-        i = 0;
+    MqConsumer( QueueingConsumer consumerMQ, MqChannel channel ) {
         this.consumerMQ = consumerMQ;
+        this.channel    = channel;
     }
     
     public InputOutputData getInput() throws MqException {
@@ -42,6 +43,7 @@ public class MqConsumer {
         }
     }
     
-    
-    
+    public void cleanUp( ) throws MqException {
+        channel.close();;
+    }
 }
