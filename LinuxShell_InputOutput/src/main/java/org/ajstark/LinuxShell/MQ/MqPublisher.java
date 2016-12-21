@@ -35,10 +35,6 @@ public class MqPublisher {
             out.flush();
             byte[] yourBytes = bos.toByteArray();
             
-            System.out.println( "\n\nMqPublisher::publish" );
-            System.out.println( inOutData.getData() );
-            System.out.println( inOutData.getUuidStr() );
-            
             channel.basicPublish( "", queueName,  null, yourBytes );
         }
         catch ( Exception excp ) {

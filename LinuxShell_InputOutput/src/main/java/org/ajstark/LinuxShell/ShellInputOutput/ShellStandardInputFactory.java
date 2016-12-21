@@ -37,7 +37,7 @@ public class ShellStandardInputFactory {
                 MqConsumer   consumer   = null;
                 
                 try {
-                    connection = MqConnection.getMqConnection(queueName, uuid);
+                    connection = MqConnection.getMqConnection( queueName, uuid);
                     consumer   = connection.creatMqConsumer();
                 }
                 catch (MqException excp ) {

@@ -22,11 +22,7 @@ public class MqConsumer {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         try {
-            //System.out.println( "" + i + " before consumerMQ.nextDelivery");
             QueueingConsumer.Delivery delivery = consumerMQ.nextDelivery();
-            //System.out.println( "" + i + " after consumerMQ.nextDelivery");
-            
-            //++i;
             
             byte[] inOutDataByte = delivery.getBody();
     

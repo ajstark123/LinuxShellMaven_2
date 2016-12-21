@@ -8,11 +8,12 @@ import org.ajstark.LinuxShell.Logger.*;
 import java.io.*;
 import java.util.concurrent.*;
 
+import java.util.*;
+
 /**
  * Created by Albert on 12/18/16.
  */
 public class MqConnection {
-    
     private String           queueName;
     private Connection       connectionMQ;
     private Channel          channel;
@@ -91,7 +92,7 @@ public class MqConnection {
     public MqConsumer creatMqConsumerTopic( MqEnvProperties.OutputType outputType ) throws MqException {
     
     
-        String exchangeName = MqEnvProperties.getExchangeName();
+        String exchangeName = MqEnvProperties.getExchangeName() + "." + MqEnvProperties.getOutputType( outputType );
         if ( exchangeName == null ) {
             logger.logError( "MqConnection", "creatMqConsumerTopic",
                     "ExchangeName Property not specified");
@@ -151,7 +152,7 @@ public class MqConnection {
     
     public MqPublisherTopic createMqPublisherTopic(  MqEnvProperties.OutputType outputType ) throws MqException {
     
-        String exchangeName = MqEnvProperties.getExchangeName();
+        String exchangeName = MqEnvProperties.getExchangeName() + "." + MqEnvProperties.getOutputType( outputType );
         if ( exchangeName == null ) {
             logger.logError( "MqConnection", "createMqPublisherTopic",
                      "ExchangeName Property not specified");
@@ -161,6 +162,7 @@ public class MqConnection {
         }
         
         String routingKey = routingKey = MqEnvProperties.getOutputType( outputType ) + "." + uuid;
+    
         try {
             channel.exchangeDeclare( exchangeName,"topic");
         }
@@ -178,49 +180,62 @@ public class MqConnection {
     }
     
     
-    
-    
-    
     public void close() throws MqException {
+        closeMqChannel( channel );
+    
         closeMqConnection( connectionMQ, null );
     }
     
     
     private static void closeMqConnection( Connection connectionMQ, MqException inOutExcp ) throws MqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
-        
-        if ( connectionMQ != null) {
+    
+        if (connectionMQ != null) {
             try {
-                if ( connectionMQ.isOpen() ) {
+                if (connectionMQ.isOpen()) {
                     connectionMQ.close();
                 }
     
-                if ( inOutExcp != null ) {
+                if (inOutExcp != null) {
                     throw inOutExcp;
                 }
             }
-            catch ( IOException excp ) {
-                
-                if ( inOutExcp != null ) {
+            catch (Exception excp) {
+    
+                if (inOutExcp != null) {
                     throw inOutExcp;
                 }
                 else {
                     logger.logException("MqConnection", "closeMqConnection",
-                            "cannot close MQ connectionr", excp);
-                    
-                    inOutExcp = new MqException( "cannot close MQ connection" );
-                    inOutExcp.initCause( excp );
+                            "cannot close MQ connection", excp);
+        
+                    inOutExcp = new MqException("cannot close MQ connection");
+                    inOutExcp.initCause(excp);
                     throw inOutExcp;
                 }
             }
         }
-        
-        
-        
     }
     
     
+    private static void closeMqChannel( Channel channel ) {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+        
+        if ( channel != null) {
+            try {
+                if ( channel.isOpen() ) {
+                    channel.close();
+                }
+            }
+            catch ( Exception excp ) {
+                logger.logException("MqConnection", "closeMqChannel",
+                        "cannot close MQ channel", excp);
+            }
+        }
+     }
     
-    
+     public boolean isOpen() {
+        return connectionMQ.isOpen();
+     }
     
 }

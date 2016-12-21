@@ -9,7 +9,7 @@ package org.ajstark.LinuxShell.CommandInfrastructure;
 public interface Command extends Runnable {
 
 
-    public void execute();
+    public void execute( );
 
     public String getCommandStrBeingParsed();
 

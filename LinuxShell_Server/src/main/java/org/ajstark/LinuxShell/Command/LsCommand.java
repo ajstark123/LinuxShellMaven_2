@@ -2,6 +2,7 @@ package org.ajstark.LinuxShell.Command;
 
 import org.ajstark.LinuxShell.InputOutput.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.*;
+import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.text.*;
 import java.util.*;
@@ -89,6 +90,12 @@ public class LsCommand extends ParametersFollowedByFileNameCommand {
 
         InputOutputData outputData = new InputOutputData(  );
         standardOut.put( outputData );
+    
+        ShellStandardError stdErr    = super.getShellStandardError();
+        InputOutputData            errMsgObj = new InputOutputData(  );
+        if ( stdErr != null ) {
+            stdErr.put(errMsgObj);
+        }
     }
 
 

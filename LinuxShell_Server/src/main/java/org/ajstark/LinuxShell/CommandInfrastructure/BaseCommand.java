@@ -31,7 +31,7 @@ public abstract class BaseCommand implements Command {
 
     private ArrayList<String> commandStrList;
 
-    private Thread threadCommand;
+    private Thread               threadCommand;
     
     private ShellStandardError  shellStandardError;
     
@@ -46,8 +46,8 @@ public abstract class BaseCommand implements Command {
     }
 
 
-    public void execute() {
-        threadCommand = new Thread( this );
+    public void execute( ) {
+        threadCommand          = new Thread(this);
         threadCommand.start();
     }
 

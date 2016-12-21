@@ -29,8 +29,10 @@ public class CommandParser {
     private ShellStandardError  shellStandardError;
     
     
-    public CommandParser( EnvironmentVariables envVar, String commandListString,
-                          ShellStandardOutput shellStandardOutput, ShellStandardError standardError ) {
+    public CommandParser( EnvironmentVariables envVar,
+                          String               commandListString,
+                          ShellStandardOutput  shellStandardOutput,
+                          ShellStandardError   shellStandardError ) {
 
         this.commandListString = commandListString;
         this.commandListString = this.commandListString.trim();

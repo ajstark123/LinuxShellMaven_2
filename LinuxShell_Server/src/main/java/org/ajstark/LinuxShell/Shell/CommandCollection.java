@@ -14,7 +14,10 @@ import java.util.*;
  *
  */
 public class CommandCollection implements Command {
-
+    private static long                 count = 0;
+    private        ThreadGroup          group;
+    private        ThreadGroup          parentGroup;
+    
     private String commandListString;
 
     private ArrayList<BaseCommand> commandList;
@@ -28,6 +31,7 @@ public class CommandCollection implements Command {
 
 
     public void execute() {
+    
         threadCommand = new Thread( this );
         threadCommand.start();
     }
@@ -38,7 +42,7 @@ public class CommandCollection implements Command {
         while ( iter.hasPrevious() ) {
             Command cmd =  iter.previous();
 
-            cmd.execute();
+            cmd.execute( );
         }
 
 

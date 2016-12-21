@@ -2,6 +2,7 @@ package org.ajstark.LinuxShell.ShellClient;
 
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.MQ.*;
+import org.ajstark.LinuxShell.Util.*;
 
 import java.text.*;
 import java.util.*;
@@ -34,7 +35,8 @@ public class PojMqClient {
         
         
         
-        Thread mainThread = Thread.currentThread();
+        Thread       mainThread      = Thread.currentThread();
+        ThreadGroup  mainThreadGroup = new ThreadGroup( "PojMqClient main method" );
     
         MqClient              client    = null;
         MqClientRcvFromShell  rcvStdOut = null;
@@ -47,8 +49,8 @@ public class PojMqClient {
     
         try {
             client     = new MqClient(  uuid );
-            rcvStdOut  = new MqClientRcvFromShell( uuid, MqEnvProperties.OutputType.StandardOut );
-            rcvStdErr  = new MqClientRcvFromShell( uuid, MqEnvProperties.OutputType.StandardErr );
+            rcvStdOut  = new MqClientRcvFromShell( uuid, MqEnvProperties.OutputType.StandardOut, client );
+            rcvStdErr  = new MqClientRcvFromShell( uuid, MqEnvProperties.OutputType.StandardErr, client );
         }
         catch( Exception excp ) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm:ss");
@@ -66,21 +68,13 @@ public class PojMqClient {
         }
     
         waitForChildThreadToEnd( client );
-    
-        Thread rcvStdOutThread = rcvStdOut.getThreadCommand();
-        System.out.println( "\n\nbefore rcvStdOutThread.interrupt\n\n" );
-        rcvStdOutThread.interrupt();
-        System.out.println( "after rcvStdOutThread.interrupt" );
-    
-        Thread rcvStdErrThread = rcvStdErr.getThreadCommand();
-        System.out.println( "\n\nbefore rcvStdErrThread.interrupt\n\n" );
-        rcvStdErrThread.interrupt();
-        System.out.println( "\n\nafter rcvStdErrThread.interrupt\n\n" );
         
-        System.err.println( "\n\nend of main" );
-    
         logger.logInfo( "LinuxShellServer", "main", "end of method call");
         logger.shutdown();
+    
+        System.err.println( "end of method call" );
+        
+        System.exit( 0 );
         
     }
     

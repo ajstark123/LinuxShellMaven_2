@@ -1,4 +1,4 @@
-package org.ajstark.LinuxShell.org.ajstark.LinuxShell.ClientInputOutput;
+package org.ajstark.LinuxShell.ClientInputOutput;
 
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.MQ.*;
@@ -25,7 +25,7 @@ public class PublishToShell {
         
 
     
-    public static PublishToShell getPublishToShell(String uuid ) throws ClientMqException {
+    public static PublishToShell getPublishToShell( String uuid ) throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         String queueName       = System.getProperty( "QueueName" );
@@ -41,7 +41,7 @@ public class PublishToShell {
         MqConnection connection = null;
         MqPublisher  publisher  = null;
         try {
-            connection = MqConnection.getMqConnection(queueName, uuid);
+            connection = MqConnection.getMqConnection( queueName, uuid);
             publisher   = connection.createMqPublisher( );
         }
         catch (MqException excp ) {

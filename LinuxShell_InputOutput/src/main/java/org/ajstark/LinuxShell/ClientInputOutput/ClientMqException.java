@@ -1,4 +1,4 @@
-package org.ajstark.LinuxShell.org.ajstark.LinuxShell.ClientInputOutput;
+package org.ajstark.LinuxShell.ClientInputOutput;
 
 /**
  * Created by Albert on 12/18/16.

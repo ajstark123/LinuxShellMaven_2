@@ -24,12 +24,12 @@ public class ShellStandardOutputFactory extends ShellStandardOutErrBaseFactory {
                 return new ShellStandardOutputConsole( uuidStr);
             }
             case "MQ": {
-                return createShellStandardOutputMQ(  uuidStr );
+                return createShellStandardOutputMQ( uuidStr );
             }
             case "MQ_CONSOLE": {
                 ShellStandardOutputList list = new ShellStandardOutputList( uuidStr );
                 list.add(  new ShellStandardOutputConsole(uuidStr)  );
-                list.add(  createShellStandardOutputMQ(uuidStr) );
+                list.add(  createShellStandardOutputMQ(  uuidStr) );
                 
                 return list;
             }

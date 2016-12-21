@@ -15,7 +15,7 @@ public class ShellStandardErrorFactory extends ShellStandardOutErrBaseFactory  {
         return factory;
     }
     
-    public ShellStandardError getShellStandardErrort( String uuidStr ) throws ShellInputOutputException {
+    public ShellStandardError getShellStandardError( String uuidStr ) throws ShellInputOutputException {
 
     
         String inputOutputType = System.getProperty( "InputOutputType" );
@@ -44,7 +44,8 @@ public class ShellStandardErrorFactory extends ShellStandardOutErrBaseFactory  {
     
         try {
             MqConnection     connection = getMqConnection( uuidStr );
-            MqPublisherTopic publisher  = getMqPublisherTopic( uuidStr, MqEnvProperties.OutputType.StandardOut, connection );
+            
+            MqPublisherTopic publisher  = getMqPublisherTopic( uuidStr, MqEnvProperties.OutputType.StandardErr, connection );
         
             return new ShellStandardErrorMq( uuidStr, connection, publisher);
         }

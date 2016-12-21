@@ -38,6 +38,11 @@ public class ShellStandardErrorList implements ShellStandardError {
     }
     
     public void cleanUp() {
-        //empty body
+        Iterator<ShellStandardError> iter = list.iterator();
+    
+        while (iter.hasNext()) {
+            ShellStandardError stdOut = iter.next();
+            stdOut.cleanUp();
+        }
     }
 }

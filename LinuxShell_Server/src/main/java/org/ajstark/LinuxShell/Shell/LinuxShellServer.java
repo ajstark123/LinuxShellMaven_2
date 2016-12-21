@@ -2,6 +2,8 @@ package org.ajstark.LinuxShell.Shell;
 
 
 import org.ajstark.LinuxShell.Logger.*;
+import org.ajstark.LinuxShell.MQ.*;
+import org.ajstark.LinuxShell.Util.*;
 
 import java.text.*;
 import java.util.*;
@@ -38,17 +40,11 @@ public class LinuxShellServer {
  
         
         Thread mainThread = Thread.currentThread();
-
-
-        // CommandParser cmdParser = new CommandParser( "  ls -ld * | grep -i Roscoe  ");
-        // CommandParser cmdParser = new CommandParser( "  cd /Users/Albert/Documents/Development/IdeaProjects/LinuxShell/src/org/ajstark/LinuxShell/Command ; pwd; ls -ld * | grep -i Command  ");
-        // CommandParser cmdParser = new CommandParser( "  cd /Users/Albert/Documents/Development/IdeaProjects/LinuxShell/src1  ");
-        // CommandParser cmdParser = new CommandParser( "  cd /Users/Albert/Documents/Development/IdeaProjects/LinuxShell/LinuxShell.iml  ");
+        ThreadGroup  mainThreadGroup = new ThreadGroup( "LinuxShellServer main method" );
 
         try {
 
             LinuxShell shell = new LinuxShell();
-
             boolean     continueProcessing       = true;
 
             while ( continueProcessing ) {
@@ -79,10 +75,10 @@ public class LinuxShellServer {
             excp.printStackTrace();
         }
     
-        System.err.println( "\n\nend of main" );
         logger.logInfo( "LinuxShellServer", "main", "end of method call");
         logger.shutdown();
-
+    
+        System.err.println( "end of method call" );
     }
     
     public static String getVersion() {

@@ -18,12 +18,9 @@ import java.util.*;
  *
  */
 public class LinuxShell  implements Runnable {
+    private Thread               threadCommand;
 
-    private Thread             threadCommand;
-
-    private CurrentDirectory   currentDirectory;
-
-    
+    private CurrentDirectory     currentDirectory;
     private ShellStandardInput   standardInput;
     private ShellStandardOutput  standardOutput;
     private ShellStandardError   standardError;
@@ -35,10 +32,9 @@ public class LinuxShell  implements Runnable {
      *
      * @version $Id$
      *
-     *
-     *
      */
-    public LinuxShell() throws ShellInputOutputException {
+    public LinuxShell( ) throws ShellInputOutputException {
+        
         ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
     
         UUID                      uuidObj   = UUID.randomUUID();
@@ -70,9 +66,8 @@ public class LinuxShell  implements Runnable {
         if ( value != null ) {
             envVariables.put( "$OS", value );
         }
-
-
-        threadCommand = new Thread( this );
+    
+        threadCommand = new Thread(this );
         threadCommand.start();
     }
 
@@ -105,10 +100,10 @@ public class LinuxShell  implements Runnable {
                 String uuidStr = inputOutputData.getUuidStr();
                 
                 ShellStandardOutputFactory ouputFactory = ShellStandardOutputFactory.getFactory();
-                standardOutput = ouputFactory.getShellStandardOutput(uuidStr);
+                standardOutput = ouputFactory.getShellStandardOutput( uuidStr );
     
                 ShellStandardErrorFactory  errorFactory = ShellStandardErrorFactory.getFactory();
-                standardError = errorFactory.getShellStandardErrort( uuidStr );
+                standardError = errorFactory.getShellStandardError( uuidStr );
             }
             catch ( ShellInputOutputException excp ) {
                 logger.logException( "LinuxShell", "run",
@@ -121,15 +116,54 @@ public class LinuxShell  implements Runnable {
                 return;
             }
     
-            if ( retryCount == 0 ) {
-                continueLooping = processInput( inputOutputData );
+            String inputStr = inputOutputData.getData();
+            if ( inputStr.compareTo("END") == 0 ) {
+                // clent is stopping
+                // send end message back to the client to stop topic threads
+                endEndMessageClient(  );
+            }
+            else {
+                if (retryCount == 0) {
+                    continueLooping = processInput(inputOutputData);
+                }
             }
         }
     
         standardInput.cleanUp();
+    
+        
+        endEndMessageClient( );
+    
         System.err.println( "\n\nGOOD BYE!\n\n" );
         logger.logInfo( "LinuxShell", "run", "end of method call" );
     }
+    
+    
+    private void endEndMessageClient() {
+        InputOutputData lastdata        = new InputOutputData();
+        InputOutputData inputOutputData = new InputOutputData( "END" );
+        
+        if ( standardOutput != null ) {
+            standardOutput.put( inputOutputData );
+            standardOutput.put( lastdata );
+            
+            Thread.yield();
+            
+            standardOutput.cleanUp();
+        }
+    
+        if ( standardError != null ) {
+            standardError.put( inputOutputData );
+            standardOutput.put( lastdata );
+    
+            Thread.yield();
+            
+            standardError.cleanUp();
+        }
+    }
+    
+    
+    
     
     private void handleClosingStandaInOut() {
         standardInput.cleanUp();
@@ -153,7 +187,7 @@ public class LinuxShell  implements Runnable {
         
         logger.logInfo( "LinuxShell", "run", "Command: " + inputStr );
     
-        if ( inputStr.compareTo("END") == 0 ) {
+        if ( inputStr.compareTo("KILL THE FUCKING SERVER") == 0 ) {
             return false;
         }
     
@@ -183,7 +217,8 @@ public class LinuxShell  implements Runnable {
             CommandParser cmdParser = new CommandParser(currentDirectory, inputString, standardOutput, standardError );
 
             cmd = cmdParser.parse();
-        } catch (CommandParsingException excp) {
+        }
+        catch (CommandParsingException excp) {
             
             String commandStrBeingParse = excp.getCommandStrBeingParsed();
     

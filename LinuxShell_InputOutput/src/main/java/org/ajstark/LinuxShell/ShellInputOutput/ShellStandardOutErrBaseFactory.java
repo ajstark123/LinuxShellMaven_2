@@ -27,7 +27,7 @@ public class ShellStandardOutErrBaseFactory {
         MqConnection       connection = null;
         
         try {
-            connection = MqConnection.getMqConnection(queueName, uuid);
+            connection = MqConnection.getMqConnection( queueName, uuid);
         }
         catch (MqException excp) {
             ShellInputOutputException inOutExcp = new ShellInputOutputException(excp.getMessage());

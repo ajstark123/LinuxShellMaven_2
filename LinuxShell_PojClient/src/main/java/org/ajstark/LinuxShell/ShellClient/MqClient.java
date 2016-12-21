@@ -1,13 +1,10 @@
 package org.ajstark.LinuxShell.ShellClient;
 
+import org.ajstark.LinuxShell.ClientInputOutput.*;
 import org.ajstark.LinuxShell.InputOutput.*;
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.MQ.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
-
-import org.ajstark.LinuxShell.org.ajstark.LinuxShell.ClientInputOutput.*;
-
-import java.util.*;
 
 /**
  * Created by Albert on 12/18/16.
@@ -20,8 +17,9 @@ class MqClient extends MQClientBase {
     private ShellStandardInput  standardInput;
     private PublishToShell      publishToShell;
     
-    LinuxShellLogger logger;
+    private LinuxShellLogger logger;
     
+    private boolean doNotPublishInput;
     /**
      * Created by Albert on 12/18/16.
      *
@@ -32,8 +30,10 @@ class MqClient extends MQClientBase {
      *
      *
      */
-    public MqClient( String uuid )  throws Exception {
-        this.uuid = uuid;
+    public MqClient( String uuid  )  throws Exception {
+        this.uuid              = uuid;
+    
+        doNotPublishInput  = false;
         
         logger = LinuxShellLogger.getLogger();
     
@@ -41,9 +41,8 @@ class MqClient extends MQClientBase {
         
         standardInput = factory.getShellStandardInput( MqEnvProperties.InputType.CONSOLE, uuid );
         
-        publishToShell = PublishToShell.getPublishToShell( uuid );
-
-        
+        publishToShell = PublishToShell.getPublishToShell(  uuid );
+    
         threadCommand = new Thread( this );
         threadCommand.start();
     }
@@ -67,9 +66,14 @@ class MqClient extends MQClientBase {
             String inputStr = null;
             if ( inputOutputData != null ) {
                 inputStr = inputOutputData.getData();
+                
+                if ( doNotPublishInput ) {
+                    standardInput.cleanUp();
+                    publishToShell.cleanUp();
     
-                System.out.println("inStr: " + inputStr);
-    
+                    return;
+                }
+                
                 try {
                     publishToShell.publish( inputStr );
                     retryCount = 0;
@@ -89,14 +93,10 @@ class MqClient extends MQClientBase {
                 }
             }
     
-            if ( inputStr.compareTo("END") == 0 ) {
+            if ( (inputStr.compareTo("END") == 0) || (inputStr.compareTo("KILL THE FUCKING SERVER") == 0) ) {
                 continueLooping = false;
             }
         }
-        
-        // standardError.sendError( "\n\nGOOD BYE!!!\n\n"  );
-        
-        System.err.println( "\n\nGOOD BYE!!!\n\n"  );
         
         standardInput.cleanUp();
         publishToShell.cleanUp();
@@ -118,6 +118,8 @@ class MqClient extends MQClientBase {
         return version;
     }
     
-    
+    public void setDoNotPublishInput() {
+        doNotPublishInput = true;
+    }
     
 }

@@ -1,21 +1,20 @@
 package org.ajstark.LinuxShell.ShellClient;
 
-import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.ClientInputOutput.*;
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.MQ.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
-import org.ajstark.LinuxShell.org.ajstark.LinuxShell.ClientInputOutput.*;
 
 /**
  * Created by Albert on 12/19/16.
  */
 public class MqClientRcvFromShell extends MQClientBase {
-    
+    private MqClient           publisherToShell;
     private Thread             threadCommand;
-    private String             uuid;
     private ReceiveFromShell   receiveFromShell;
+    private String             uuid;
     
-    private boolean            stoppedFlag;
+    private MqEnvProperties.OutputType outputType;
     
     LinuxShellLogger logger;
     
@@ -29,10 +28,10 @@ public class MqClientRcvFromShell extends MQClientBase {
      *
      *
      */
-    public MqClientRcvFromShell( String uuid, MqEnvProperties.OutputType outputType )  throws Exception {
-        this.uuid = uuid;
-    
-        stoppedFlag = false;
+    public MqClientRcvFromShell( String uuid, MqEnvProperties.OutputType outputType, MqClient publisherToShell )  throws Exception {
+        this.publisherToShell  = publisherToShell;
+        this.uuid              = uuid;
+        this.outputType        = outputType;
         
         logger = LinuxShellLogger.getLogger();
         
@@ -40,30 +39,34 @@ public class MqClientRcvFromShell extends MQClientBase {
     
     
         receiveFromShell = ReceiveFromShell.getReceiveFromShell( outputType, uuid );
-        
-        
+    
         threadCommand = new Thread( this );
         threadCommand.start();
     }
     
     
     public void run() {
-        while (  ! threadCommand.interrupted() ) {
+        boolean continueLooping = true;
+        while ( continueLooping ) {
             try {
                 String outStr = receiveFromShell.consume();
                 System.out.println("" + outStr);
+                
+                if ( outStr.compareTo("END") == 0 ) {
+                    publisherToShell.setDoNotPublishInput();
+                    continueLooping = false;
+                }
             }
             catch (ClientMqException excp) {
-        
                 logger.logException("MqClientRcvFromShell", "run",
                         "cannot read from a MQ queue", excp);
             }
         }
-    
-    
+        
         receiveFromShell.cleanUp();
         
         logger.logInfo( "MqClientRcvFromShell", "run", "end of method call" );
+        System.out.println( "\n\nend run " + "MqClient " + MqEnvProperties.getOutputType(outputType) );
     }
     
     public Thread getThreadCommand() {
@@ -71,8 +74,5 @@ public class MqClientRcvFromShell extends MQClientBase {
         return threadCommand;
     }
     
-    public void setStopFlag()  {
-        stoppedFlag = true;
-    }
-    
+
 }

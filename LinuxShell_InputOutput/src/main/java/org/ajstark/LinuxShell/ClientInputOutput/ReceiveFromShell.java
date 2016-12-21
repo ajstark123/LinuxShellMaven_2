@@ -1,4 +1,4 @@
-package org.ajstark.LinuxShell.org.ajstark.LinuxShell.ClientInputOutput;
+package org.ajstark.LinuxShell.ClientInputOutput;
 
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.MQ.*;
@@ -18,7 +18,7 @@ public class ReceiveFromShell {
         this.consumer = consumer;
     }
     
-    public static ReceiveFromShell getReceiveFromShell(MqEnvProperties.OutputType outputType, String uuid ) throws ClientMqException {
+    public static ReceiveFromShell getReceiveFromShell( MqEnvProperties.OutputType outputType, String uuid ) throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         String queueName = System.getProperty("QueueName");
@@ -34,7 +34,7 @@ public class ReceiveFromShell {
         MqConnection connection = null;
         MqConsumer   consumer   = null;
         try {
-            connection = MqConnection.getMqConnection(queueName, uuid);
+            connection = MqConnection.getMqConnection( queueName, uuid);
             consumer = connection.creatMqConsumerTopic( outputType  );
         }
         catch (MqException excp) {
