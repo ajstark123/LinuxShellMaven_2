@@ -19,16 +19,6 @@ public class ReceiveFromShell {
     public static ReceiveFromShell getReceiveFromShell( MqEnvProperties.OutputType outputType, String uuid ) throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        String queueName = System.getProperty("QueueName");
-        if (queueName == null) {
-            ClientMqException inOutExcp = new ClientMqException("missing MQ queue name");
-            
-            logger.logException("ReceiveFromShell", "ReceiveFromShell",
-                    "missing MQ queue name", inOutExcp);
-            
-            throw inOutExcp;
-        }
-        
         MqConnection connection = null;
         MqConsumer   consumer   = null;
         try {

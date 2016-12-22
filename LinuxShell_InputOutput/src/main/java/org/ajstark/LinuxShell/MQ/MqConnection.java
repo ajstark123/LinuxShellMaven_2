@@ -33,8 +33,11 @@ public class MqConnection {
     
         Connection       connectionMQ;
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(        "localhost" );
-    
+        factory.setUsername(    MqEnvProperties.getUserName() );
+        factory.setPassword(    MqEnvProperties.getPassword() );
+        factory.setVirtualHost( MqEnvProperties.getVirtualHost() );
+        factory.setHost(        MqEnvProperties.getMqBrokerHost() );
+        
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
         MqException inOutExcp = null;
@@ -57,28 +60,28 @@ public class MqConnection {
     }
     
     
-    public MqConsumer creatMqConsumer( String queueName ) throws MqException {
-        
-        QueueingConsumer consumerMQ = null;
+    public MqConsumer creatMqConsumer() throws MqException {
     
+        String queueName = MqEnvProperties.getShellInputQueueName();
+    
+        QueueingConsumer consumerMQ = null;
+        
         MqChannel mqChannel = null;
         try {
-            Channel   channel   = connectionMQ.createChannel();
-            mqChannel           = new MqChannel( channel );
-    
-            channel.queueDeclare(queueName, false, false, false, null);
+            mqChannel = createChannel();
+            mqChannel.queueDeclare( queueName );
             
-            consumerMQ = new QueueingConsumer(channel);
-            channel.basicConsume(queueName, true, consumerMQ);
+            consumerMQ = mqChannel.createQueueingConsumer();
+            mqChannel.basicConsume(queueName, consumerMQ);
         }
-        catch (IOException excp ) {
+        catch (MqException excp ) {
             logger.logException( "MqConnection", "creatMqConsumer",
                     "cannot create MQ queue consumer", excp);
     
             MqException inOutExcp = new MqException( "cannot create MQ queue consumer" );
             inOutExcp.initCause( excp );
     
-            closeMqConnection( connectionMQ, inOutExcp );;
+            closeMqConnection( connectionMQ, inOutExcp );
         }
     
         MqConsumer  consumer = new MqConsumer( consumerMQ, mqChannel );
@@ -90,66 +93,56 @@ public class MqConnection {
     public MqConsumer creatMqConsumerTopic( MqEnvProperties.OutputType outputType, String uuid ) throws MqException {
     
     
-        String exchangeName = MqEnvProperties.getExchangeName() + "." + MqEnvProperties.getOutputType( outputType );
-        if ( exchangeName == null ) {
-            logger.logError( "MqConnection", "creatMqConsumerTopic",
-                    "ExchangeName Property not specified");
+        String exchangeName = MqEnvProperties.getExchangeName( outputType );
         
-            MqException inOutExcp = new MqException( "ExchangeName Property not specified" );
-            closeMqConnection( connectionMQ, inOutExcp );
-        }
+        String routingKey = MqEnvProperties.getOutputTypeString( outputType ) + "." + uuid;
         
-        String routingKey = MqEnvProperties.getOutputType( outputType ) + "." + uuid;
-        
+
+        QueueingConsumer consumerMq = null;
         MqChannel mqChannel = null;
-        QueueingConsumer consumerMQ = null;
         try {
-            Channel channel = connectionMQ.createChannel();
-            mqChannel       = new MqChannel( channel );
+            mqChannel = createChannel();
+            mqChannel.exchangeDeclare( exchangeName );
             
-            channel.exchangeDeclare(exchangeName, "topic");
-            String queueName = channel.queueDeclare().getQueue();
-            channel.queueBind(queueName, exchangeName, routingKey);
+            String queueName = mqChannel.getQueueNameFromQueueDeclare();
+            mqChannel.queueBind(queueName, exchangeName, routingKey);
             
-            consumerMQ = new QueueingConsumer(channel);
-            
-            channel.basicConsume(queueName, true, consumerMQ);
-            
+            consumerMq = mqChannel.createQueueingConsumer();
+    
+            mqChannel.basicConsume(queueName, consumerMq);
         }
-        catch (IOException excp ) {
+        catch (MqException excp ) {
             logger.logException( "MqConnection", "creatMqConsumerTopic",
                     "cannot create MQ queue consumer", excp);
             
             MqException inOutExcp = new MqException( "cannot create MQ queue consumer" );
             inOutExcp.initCause( excp );
-            
+    
             closeMqConnection( connectionMQ, inOutExcp );;
         }
         
-        MqConsumer  consumer = new MqConsumer( consumerMQ, mqChannel );
+        
+        MqConsumer  consumer = new MqConsumer( consumerMq, mqChannel );
         
         return consumer;
     }
     
     
     
-    public MqPublisher createMqPublisher( String queueName, String uuid ) throws MqException {
+    public MqPublisher createMqPublisher( String uuid ) throws MqException {
+    
+        String queueName = MqEnvProperties.getShellInputQueueName();
     
         MqChannel mqChannel = null;
         try {
-            Channel   channel   = connectionMQ.createChannel();
-            mqChannel = new MqChannel( channel );
-            
-            channel.queueDeclare(queueName, false, false, false, null);
+            mqChannel = createChannel();
+            mqChannel.queueDeclare( queueName );
         }
-        catch (IOException excp ) {
+        catch (MqException excp ) {
             logger.logException( "MqConnection", "createMqPublisher",
                     "cannot create MQ queue consumer", excp);
     
-            MqException inOutExcp = new MqException( "cannot create MQ queue consumer" );
-            inOutExcp.initCause( excp );
-    
-            closeMqConnection( connectionMQ, inOutExcp );;
+            closeMqConnection( connectionMQ, excp );;
         }
             
         return new MqPublisher( mqChannel, queueName, uuid ) ;
@@ -158,32 +151,20 @@ public class MqConnection {
     
     public MqPublisherTopic createMqPublisherTopic(  MqEnvProperties.OutputType outputType, String uuid ) throws MqException {
     
-        String exchangeName = MqEnvProperties.getExchangeName() + "." + MqEnvProperties.getOutputType( outputType );
-        if ( exchangeName == null ) {
-            logger.logError( "MqConnection", "createMqPublisherTopic",
-                     "ExchangeName Property not specified");
-    
-            MqException inOutExcp = new MqException( "ExchangeName Property not specified" );
-            closeMqConnection( connectionMQ, inOutExcp );
-        }
+        String exchangeName = MqEnvProperties.getExchangeName( outputType);
         
-        String routingKey = routingKey = MqEnvProperties.getOutputType( outputType ) + "." + uuid;
+        String routingKey  = MqEnvProperties.getOutputTypeString( outputType ) + "." + uuid;
     
         MqChannel mqChannel = null;
         try {
-            Channel   channel   = connectionMQ.createChannel();
-            mqChannel = new MqChannel( channel );
-            
-            channel.exchangeDeclare( exchangeName,"topic");
+            mqChannel = createChannel();
+            mqChannel.exchangeDeclare( exchangeName );
         }
-        catch (IOException excp ) {
+        catch (MqException excp ) {
             logger.logException( "MqConnection", "createMqPublisherTopic",
                     "cannot create MQ queue topic publisher", excp);
             
-            MqException inOutExcp = new MqException( "cannot create MQ queue consumer" );
-            inOutExcp.initCause( excp );
-            
-            closeMqConnection( connectionMQ, inOutExcp );;
+            closeMqConnection( connectionMQ, excp );;
         }
         
         return new MqPublisherTopic( mqChannel, exchangeName, routingKey ) ;
@@ -225,5 +206,27 @@ public class MqConnection {
             }
         }
     }
+    
+    private MqChannel createChannel() throws MqException {
+    
+        Channel channel = null;
+        try {
+            channel = connectionMQ.createChannel();
+        }
+        catch (IOException excp ) {
+            logger.logException( "MqConnection", "createChannel",
+                    "cannot create MQ channel", excp);
+    
+            MqException inOutExcp = new MqException( "getQueueNameFromQueueDeclare failed" );
+            inOutExcp.initCause( excp );
+    
+            throw inOutExcp;
+        }
+            
+        MqChannel mqChannel = new MqChannel( channel );
+        
+        return mqChannel;
+    }
+    
     
 }

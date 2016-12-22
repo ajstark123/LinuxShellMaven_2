@@ -66,7 +66,7 @@ public class MqClientRcvFromShell extends MQClientBase {
         receiveFromShell.cleanUp();
         
         logger.logInfo( "MqClientRcvFromShell", "run", "end of method call" );
-        System.out.println( "\n\nend run " + "MqClient " + MqEnvProperties.getOutputType(outputType) );
+        System.out.println( "\n\nend run " + "MqClient " + MqEnvProperties.getOutputTypeString(outputType) );
     }
     
     public Thread getThreadCommand() {

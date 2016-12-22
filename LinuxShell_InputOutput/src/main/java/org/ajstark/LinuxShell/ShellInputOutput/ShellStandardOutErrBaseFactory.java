@@ -39,17 +39,7 @@ public class ShellStandardOutErrBaseFactory {
             throws ShellInputOutputException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        String queueName = System.getProperty("QueueName");
-        if (queueName == null) {
-            ShellInputOutputException inOutExcp = new ShellInputOutputException("missing MQ queue name");
-            
-            logger.logException("ShellStandardOutErrBaseFactory", "getShellStandardMqOutErr",
-                    "missing MQ queue name", inOutExcp);
-            
-            throw inOutExcp;
-        }
         MqPublisherTopic   publisher  = null;
-        
         try {
             publisher = connection.createMqPublisherTopic( outType, uuid );
         }

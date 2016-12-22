@@ -7,10 +7,8 @@ import org.ajstark.LinuxShell.MQ.*;
  */
 public class ShellStandardInputFactory {
     
-    private static ShellStandardInputFactory factory;
-    
     public static ShellStandardInputFactory getFactory() {
-        factory = new ShellStandardInputFactory();
+        ShellStandardInputFactory factory = new ShellStandardInputFactory();
         return factory;
     }
     
@@ -23,22 +21,11 @@ public class ShellStandardInputFactory {
             }
             case MQ:
             case MQ_CONSOLE: {
-                String queueName       = System.getProperty( "QueueName" );
-                if ( queueName == null ) {
-                    ShellInputOutputException inOutExcp = new ShellInputOutputException( "missing MQ queue name" );
-    
-                    logger.logException( "ShellStandardInputFactory", "getShellStandardInput",
-                            "missing MQ queue name", inOutExcp);
-                    
-                    throw inOutExcp;
-                }
-                
-                MqConnection connection = null;
                 MqConsumer   consumer   = null;
                 
                 try {
-                    connection = MqConnection.getMqConnection( );
-                    consumer   = connection.creatMqConsumer( queueName );
+                    MqConnection connection = MqConnection.getMqConnection( );
+                    consumer                = connection.creatMqConsumer();
                 }
                 catch (MqException excp ) {
                     ShellInputOutputException inOutExcp = new ShellInputOutputException( excp.getMessage() );

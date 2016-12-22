@@ -101,6 +101,21 @@ public class LinuxShellLogger {
         log4jLogger.error( message, excp );
     }
     
+    public void logFatal( String className, String methodName, String message, Exception excp ) {
+        StringBuffer strBuffer = new StringBuffer( ""  ) ;
+        strBuffer.append( "Class: " );
+        strBuffer.append( className );
+        strBuffer.append( " Method: " );
+        strBuffer.append( methodName );
+        strBuffer.append( " Message: " );
+        strBuffer.append( message );
+        
+        log4jLogger.fatal( message, excp );
+    }
+    
+    
+    
+    
     public void shutdown() {
         LogManager.shutdown();
     }

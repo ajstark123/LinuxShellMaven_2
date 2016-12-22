@@ -46,7 +46,9 @@ public class MqPublisherTopic {
         }
         finally {
             try {
-                bos.close();
+                if ( bos != null ) {
+                    bos.close();
+                }
             } catch (Exception ex) {
                 // ignore close exception
             }

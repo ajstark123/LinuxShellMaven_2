@@ -5,7 +5,19 @@ vhost.org.ajstark.LinuxShell
 #
 #  queue that the linux Shell accepts input to
 #
-exchange.org.ajstark.LinuxShell
+TopicExchangeStdOut = exchange.org.ajstark.LinuxShell.Topic.StandardOut
+TopicExchangeStdErr = exchange.org.ajstark.LinuxShell.Topic.StandardErr
 
 org.ajstark.LinuxShell.input
 
+LinuxShell
+CatDog1
+
+
+-DLoggerConfigurationFile=/Users/Albert/Documents/Development/IdeaProjects/LinuxShell/LinuxShell_InputOutput/src/main/project_resources/lib/properties/Logger.properties
+-DInputOutputType=MQ
+-DQueueName=org.ajstark.shell.input
+-DMqConfigurationFile=/Users/Albert/Documents/Development/IdeaProjects/LinuxShell/LinuxShell_InputOutput/src/main/project_resources/lib/properties/MQ.properties
+
+
+-DMqConfigurationFile=/Users/Albert/Documents/Development/IdeaProjects/LinuxShell/LinuxShell_InputOutput/src/main/project_resources/lib/properties/MQ.properties

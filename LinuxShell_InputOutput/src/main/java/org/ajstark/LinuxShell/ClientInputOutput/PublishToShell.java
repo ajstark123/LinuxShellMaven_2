@@ -14,11 +14,9 @@ import org.ajstark.LinuxShell.MQ.*;
  */
 public class PublishToShell {
     private MqPublisher  publisher;
-    private String       uuid;
     
-    private PublishToShell( MqPublisher  publisher, String uuid )  {
+    private PublishToShell( MqPublisher  publisher )  {
         this.publisher  = publisher;
-        this.uuid       = uuid;
     }
         
 
@@ -26,21 +24,11 @@ public class PublishToShell {
     public static PublishToShell getPublishToShell( String uuid ) throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
-        String queueName       = System.getProperty( "QueueName" );
-        if ( queueName == null ) {
-            ClientMqException inOutExcp = new ClientMqException( "missing MQ queue name" );
-        
-            logger.logException( "PublishToShell", "getPublishToShell",
-                    "missing MQ queue name", inOutExcp);
-        
-            throw inOutExcp;
-        }
-    
         MqConnection connection = null;
         MqPublisher  publisher  = null;
         try {
             connection = MqConnection.getMqConnection( );
-            publisher   = connection.createMqPublisher( queueName, uuid );
+            publisher   = connection.createMqPublisher( uuid );
         }
         catch (MqException excp ) {
             ClientMqException inOutExcp = new ClientMqException( excp.getMessage() );
@@ -52,7 +40,7 @@ public class PublishToShell {
             throw inOutExcp;
         }
     
-        PublishToShell publishToShell = new PublishToShell( publisher, uuid );
+        PublishToShell publishToShell = new PublishToShell( publisher );
         
         return publishToShell;
     }
