@@ -24,25 +24,25 @@ public class MqPublisherTopic {
     public void publish(  String inOutDataStr ) throws MqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
-        ByteArrayOutputStream bos = null;
+        ByteArrayOutputStream bos            = null;
+        byte[]                inOutDataBytes = null;
         try {
-            InputOutputData inOutData = new InputOutputData( inOutDataStr );
-        
+            InputOutputData inOutData = new InputOutputData(inOutDataStr);
+    
             bos = new ByteArrayOutputStream();
             ObjectOutput out = new ObjectOutputStream(bos);
             out.writeObject(inOutData);
             out.flush();
-            byte[] inOutDataBytes = bos.toByteArray();
-            
-            channel.basicPublish( exchangeName, routingKey, inOutDataBytes );
+            inOutDataBytes = bos.toByteArray();
         }
         catch ( Exception excp ) {
             logger.logException( "MqPublisherTopic", "publish",
                     "can not publish to a queue", excp);
-        
+    
             MqException inOutExcp = new MqException( "can not publish to a queue" );
             inOutExcp.initCause( excp );
-            throw inOutExcp;
+            
+            return;
         }
         finally {
             try {
@@ -52,6 +52,20 @@ public class MqPublisherTopic {
             } catch (Exception ex) {
                 // ignore close exception
             }
+        }
+           
+        try {
+            channel.basicPublish( exchangeName, routingKey, inOutDataBytes );
+        }
+        catch ( Exception excp ) {
+            logger.logException( "MqPublisherTopic", "publish",
+                    "can not publish to a queue", excp);
+            
+            cleanUp();
+        
+            MqException inOutExcp = new MqException( "can not publish to a queue" );
+            inOutExcp.initCause( excp );
+            throw inOutExcp;
         }
     }
     

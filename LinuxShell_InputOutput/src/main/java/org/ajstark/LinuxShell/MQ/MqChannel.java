@@ -4,14 +4,17 @@ import com.rabbitmq.client.*;
 
 import org.ajstark.LinuxShell.Logger.*;
 import java.io.*;
+import java.util.concurrent.*;
 
 
 /**
  * Created by Albert on 12/21/16.
  */
-public class MqChannel {
+public class MqChannel implements ShutdownListener {
     private Channel          channel;
     private LinuxShellLogger logger;
+    
+    private ScheduledExecutorService executor;
     
     MqChannel( Channel  channel ) {
         this.channel = channel;
@@ -194,6 +197,55 @@ public class MqChannel {
                 logger.logException("MqChannel", "close",
                         "cannot close MQ channel", excp);
             }
+        }
+    }
+    
+    public void shutdownCompleted(  ShutdownSignalException cause ) {
+        // reconnect only on on unexpected errors
+        if ( ! cause.isInitiatedByApplication() ){
+            logger.logException( "MqChannel", "shutDownComplete",
+                    "lost MQ connection", cause);
+            
+            asyncWaitAndReconnect();
+        }
+        else {
+            executor.shutdown();
+        }
+    }
+    
+    private void asyncWaitAndReconnect() {
+        executor.schedule( new Runnable()
+        {
+            @Override
+            public void run() {
+                start();
+            }
+        }, 15, TimeUnit.SECONDS );
+    }
+    
+    private void  start() {
+        try {
+            close();
+        }
+        catch (MqException excp ) {
+            // do nothing
+            logger.logException( "MqChannel", "stop",
+                    "cannot close MQ channel", excp);
+        }
+        
+        channel = null;
+    }
+    
+    public void stop() {
+        try {
+            logger.logInfo( "MqChannel", "stop",
+                    "stop method called" );
+            close();
+        }
+        catch (Exception excp) {
+            // do nothing
+            logger.logException( "MqChannel", "stop",
+                    "cannot close MQ channel", excp);
         }
     }
     

@@ -18,10 +18,13 @@ import java.util.*;
  *
  */
 public class LinuxShell  implements Runnable {
-    private Thread               threadCommand;
-
-    private CurrentDirectory     currentDirectory;
-    private ShellStandardInput   standardInput;
+    private Thread                    threadCommand;
+ 
+    private CurrentDirectory          currentDirectory;
+    private ShellStandardInput        standardInput;
+    private ShellStandardInputFactory factory;
+    
+    private LinuxShellLogger logger;
     
     /**
      * Created by Albert on 11/8/16.
@@ -31,12 +34,11 @@ public class LinuxShell  implements Runnable {
      * @version $Id$
      *
      */
-    public LinuxShell( ) throws ShellInputOutputException {
-        
-        ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
+    public LinuxShell( ) {
     
-        MqEnvProperties.InputType inputType = MqEnvProperties.getEnvPropertyInputOutputType();
-        standardInput = factory.getShellStandardInput( inputType );
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+        
+        factory = ShellStandardInputFactory.getFactory();
         
         Properties envVariables     = new Properties();
         currentDirectory = new CurrentDirectory();
@@ -70,45 +72,35 @@ public class LinuxShell  implements Runnable {
         boolean continueLooping = true;
     
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
-        
-        int retryCount = 0;
-        while (  continueLooping ) {
-            InputOutputData inputOutputData = null;
     
-            try {
-                inputOutputData = standardInput.getInput();
-   
-                retryCount = 0;
-            }
-            catch ( ShellInputOutputException excp ) {
-                ++retryCount;
-                
-                if ( retryCount == 3 ) {
-                    standardInput.cleanUp();
-                    return;
-                }
-            }
+        
+        while (  continueLooping ) {
+            InputOutputData inputOutputData = readInput();
             
-            String inputStr = inputOutputData.getData();
-            if ( inputStr.compareTo("KILL THE FUCKING SERVER") == 0 ) {
-                continueLooping = false;
-            }
-            else {
-                if (retryCount == 0) {
+            if ( inputOutputData != null ) {
+                String inputStr = inputOutputData.getData();
+                if (inputStr.compareTo("KILL THE FUCKING SERVER") == 0) {
+                    continueLooping = false;
+                }
+                else {
                     try {
-                        if  ( (inputStr != null) && (inputStr.compareTo("") != 0) ) {
-                            Command cmd = parseInputStr( inputOutputData );
-                            if ( cmd != null) {
+                        if ((inputStr != null) && (inputStr.compareTo("") != 0)) {
+                            Command cmd = parseInputStr(inputOutputData);
+                            if (cmd != null) {
                                 cmd.execute();
                             }
-        
-                            currentDirectory.addCmdToHistory( inputStr );
+            
+                            currentDirectory.addCmdToHistory(inputStr);
                         }
                     }
                     catch (Exception excp) {
                         // do nothing.
                     }
                 }
+            }
+            else {
+                logger.logError( "LinuxShell", "run",
+                        "standardInput.getInput() returned a null (inputOutputData)");
             }
         }
     
@@ -119,6 +111,42 @@ public class LinuxShell  implements Runnable {
     }
     
 
+    private InputOutputData readInput() {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+        MqEnvProperties.InputType inputType = MqEnvProperties.getEnvPropertyInputOutputType();
+        
+        InputOutputData inputOutputData = null;
+        try {
+            if (standardInput == null) {
+                standardInput = factory.getShellStandardInput( inputType );
+            }
+            inputOutputData = standardInput.getInput();
+        }
+        catch ( ShellInputOutputException excp ) {
+            logger.logException( "LinuxShell", "run",
+                    "cannot read from MQ, sleep 15 seconds", excp);
+        
+            try {
+                threadCommand.sleep(15000 );
+            }
+            catch ( Exception excp1 ) {
+                // do nothing
+            }
+        
+            try {
+                standardInput = factory.getShellStandardInput(inputType);
+            }
+            catch ( Exception excp0 ) {
+                logger.logException( "LinuxShell", "run",
+                        "could not create a new factory, after sleeping 15 seconds", excp0);
+            }
+        }
+        
+        return inputOutputData;
+    }
+    
+    
+    
     /*
      *  returns a Command object  if the input string was parsed correctly.  otherwise null
      */

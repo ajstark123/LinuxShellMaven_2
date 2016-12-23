@@ -13,16 +13,26 @@ import java.util.*;
 /**
  * Created by Albert on 12/18/16.
  */
-public class MqConnection {
+public class MqConnection implements ShutdownListener {
     
     private static MqConnection mqConnection = null;
-    private Connection          connectionMQ;
+    
+    private ScheduledExecutorService executor;
+    
+    private volatile Connection          connection;
+    
     private LinuxShellLogger    logger;
     
-    private MqConnection( Connection connectionMQ )  {
-        this.connectionMQ = connectionMQ;
+    private MqConnection( )  {
+        this.connection = null;
     
         this.logger       = LinuxShellLogger.getLogger();
+        
+        this.executor     = Executors.newSingleThreadScheduledExecutor();
+    }
+    
+    private void setMqConnection( Connection connection ) {
+        this.connection = connection;
     }
     
     public static MqConnection getMqConnection( ) throws MqException {
@@ -31,19 +41,15 @@ public class MqConnection {
             return mqConnection;
         }
     
-        Connection       connectionMQ;
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setUsername(    MqEnvProperties.getUserName() );
-        factory.setPassword(    MqEnvProperties.getPassword() );
-        factory.setVirtualHost( MqEnvProperties.getVirtualHost() );
-        factory.setHost(        MqEnvProperties.getMqBrokerHost() );
+        mqConnection = new MqConnection( );
+        Connection       connection;
         
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
         MqException inOutExcp = null;
-        connectionMQ = null;
+        connection = null;
         try {
-            connectionMQ = factory.newConnection();
+            connection = mqConnection.createMqConnection(  );
         }
         catch ( Exception excp ) {
             logger.logException( "MqConnection", "getMqConnection",
@@ -51,10 +57,12 @@ public class MqConnection {
         
             inOutExcp = new MqException( "cannot create MQ queue consumer" );
             inOutExcp.initCause( excp );
-            closeMqConnection( connectionMQ, inOutExcp );
+            
+            closeMqConnection( connection, inOutExcp );
         }
     
-        mqConnection = new MqConnection( connectionMQ );
+        //mqConnection = new MqConnection( connection );
+        mqConnection.setMqConnection( connection );
         
         return mqConnection;
     }
@@ -69,10 +77,12 @@ public class MqConnection {
         MqChannel mqChannel = null;
         try {
             mqChannel = createChannel();
-            mqChannel.queueDeclare( queueName );
-            
-            consumerMQ = mqChannel.createQueueingConsumer();
-            mqChannel.basicConsume(queueName, consumerMQ);
+            if ( mqChannel != null ) {
+                mqChannel.queueDeclare(queueName);
+    
+                consumerMQ = mqChannel.createQueueingConsumer();
+                mqChannel.basicConsume(queueName, consumerMQ);
+            }
         }
         catch (MqException excp ) {
             logger.logException( "MqConnection", "creatMqConsumer",
@@ -81,7 +91,7 @@ public class MqConnection {
             MqException inOutExcp = new MqException( "cannot create MQ queue consumer" );
             inOutExcp.initCause( excp );
     
-            closeMqConnection( connectionMQ, inOutExcp );
+            closeMqConnection( connection, inOutExcp );
         }
     
         MqConsumer  consumer = new MqConsumer( consumerMQ, mqChannel );
@@ -102,6 +112,10 @@ public class MqConnection {
         MqChannel mqChannel = null;
         try {
             mqChannel = createChannel();
+            if (mqChannel == null ){
+                return null;
+            }
+            
             mqChannel.exchangeDeclare( exchangeName );
             
             String queueName = mqChannel.getQueueNameFromQueueDeclare();
@@ -118,7 +132,7 @@ public class MqConnection {
             MqException inOutExcp = new MqException( "cannot create MQ queue consumer" );
             inOutExcp.initCause( excp );
     
-            closeMqConnection( connectionMQ, inOutExcp );;
+            closeMqConnection( connection, inOutExcp );;
         }
         
         
@@ -136,13 +150,16 @@ public class MqConnection {
         MqChannel mqChannel = null;
         try {
             mqChannel = createChannel();
+            if ( mqChannel == null ) {
+                return null;
+            }
             mqChannel.queueDeclare( queueName );
         }
         catch (MqException excp ) {
             logger.logException( "MqConnection", "createMqPublisher",
                     "cannot create MQ queue consumer", excp);
     
-            closeMqConnection( connectionMQ, excp );;
+            closeMqConnection( connection, excp );;
         }
             
         return new MqPublisher( mqChannel, queueName, uuid ) ;
@@ -164,7 +181,7 @@ public class MqConnection {
             logger.logException( "MqConnection", "createMqPublisherTopic",
                     "cannot create MQ queue topic publisher", excp);
             
-            closeMqConnection( connectionMQ, excp );;
+            closeMqConnection( connection, excp );;
         }
         
         return new MqPublisherTopic( mqChannel, exchangeName, routingKey ) ;
@@ -172,19 +189,19 @@ public class MqConnection {
     
     
     public void close() throws MqException {
-        closeMqConnection( connectionMQ, null );
+        closeMqConnection( connection, null );
     }
     
     
-    private static void closeMqConnection( Connection connectionMQ, MqException inOutExcp ) throws MqException {
+    private static void closeMqConnection( Connection connection, MqException inOutExcp ) throws MqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
-        if (connectionMQ != null) {
+        if (connection != null) {
             try {
-                if (connectionMQ.isOpen()) {
-                    connectionMQ.close();
+                if (connection.isOpen()) {
+                    connection.close();
                 }
-                connectionMQ = null;
+                connection = null;
     
                 if (inOutExcp != null) {
                     throw inOutExcp;
@@ -205,13 +222,30 @@ public class MqConnection {
                 }
             }
         }
+        else {
+            if ( inOutExcp  != null ) {
+                throw inOutExcp;
+            }
+        }
     }
     
     private MqChannel createChannel() throws MqException {
     
+        if ( connection == null ) {
+            try {
+                connection = createMqConnection();
+            }
+            catch ( MqException excp ) {
+                logger.logException( "MqConnection", "createChannel",
+                        "cannot create Connection", excp);
+    
+                return null;
+            }
+        }
+        
         Channel channel = null;
         try {
-            channel = connectionMQ.createChannel();
+            channel = connection.createChannel();
         }
         catch (IOException excp ) {
             logger.logException( "MqConnection", "createChannel",
@@ -226,6 +260,87 @@ public class MqConnection {
         MqChannel mqChannel = new MqChannel( channel );
         
         return mqChannel;
+    }
+    
+    
+    
+    private void asyncWaitAndReconnect() {
+        executor.schedule( new Runnable()
+        {
+            @Override
+            public void run() {
+                start();
+            }
+        }, 15, TimeUnit.SECONDS );
+    }
+    
+    
+    private void  start() {
+        try {
+            connection = createMqConnection(  );
+        }
+        catch ( Exception excp ) {
+            logger.logException( "MqConnection", "start",
+                    "cannot create MQ queue consumer", excp);
+    
+            asyncWaitAndReconnect();
+        }
+    }
+    
+    
+    private Connection createMqConnection(  ) throws MqException {
+
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUsername(    MqEnvProperties.getUserName() );
+        factory.setPassword(    MqEnvProperties.getPassword() );
+        factory.setVirtualHost( MqEnvProperties.getVirtualHost() );
+        factory.setHost(        MqEnvProperties.getMqBrokerHost() );
+    
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+        
+        connection = null;
+        try {
+            connection = factory.newConnection();
+            connection.addShutdownListener( this );
+        }
+        catch ( Exception excp ) {
+            logger.logException( "MqConnection", "createMqConnection",
+                    "cannot create MQ connection", excp);
+    
+            MqException inOutExcp = new MqException( "cannot create MQ connection.addShutdownListener( this );" );
+            inOutExcp.initCause( excp );
+            
+            throw inOutExcp;
+        }
+        
+        return connection;
+    }
+    
+    public void shutdownCompleted(  ShutdownSignalException cause ) {
+        // reconnect only on on unexpected errors
+        if ( ! cause.isInitiatedByApplication() ){
+            logger.logException( "MqConnection", "shutDownComplete",
+                    "lost MQ connection", cause);
+    
+            asyncWaitAndReconnect();
+        }
+        else {
+            executor.shutdown();
+        }
+    }
+    
+    
+    public void stop() {
+        try {
+            logger.logInfo( "MqConnection", "stop",
+                    "stop method called" );
+            closeMqConnection(connection, null);
+        }
+        catch (Exception excp) {
+                // do nothing
+                logger.logException( "MqConnection", "stop",
+                        "cannot close MQ connection", excp);
+        }
     }
     
     

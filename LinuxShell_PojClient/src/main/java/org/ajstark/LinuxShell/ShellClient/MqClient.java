@@ -20,6 +20,9 @@ class MqClient extends MQClientBase {
     private LinuxShellLogger logger;
     
     private boolean doNotPublishInput;
+    
+    private ShellStandardInputFactory factory;
+    
     /**
      * Created by Albert on 12/18/16.
      *
@@ -30,19 +33,15 @@ class MqClient extends MQClientBase {
      *
      *
      */
-    public MqClient( String uuid  )  throws Exception {
+    public MqClient( String uuid  )  {
         this.uuid              = uuid;
     
         doNotPublishInput  = false;
         
         logger = LinuxShellLogger.getLogger();
     
-        ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
+        factory = ShellStandardInputFactory.getFactory();
         
-        standardInput = factory.getShellStandardInput( MqEnvProperties.InputType.CONSOLE );
-        
-        publishToShell = PublishToShell.getPublishToShell(  uuid );
-    
         threadCommand = new Thread( this );
         threadCommand.start();
     }
@@ -56,11 +55,24 @@ class MqClient extends MQClientBase {
             InputOutputData inputOutputData = null;
             
             try {
+                if ( standardInput == null ) {
+                    standardInput = factory.getShellStandardInput(MqEnvProperties.InputType.CONSOLE);
+                }
+                
                 inputOutputData = standardInput.getInput();
                 inputOutputData.setUuidStr( uuid );
             }
             catch ( ShellInputOutputException excp ) {
                 inputOutputData = null;
+    
+                try {
+                    publishToShell = PublishToShell.getPublishToShell(uuid);
+                }
+                catch ( Exception excp0 ) {
+                    logger.logException( "MqClient", "run",
+                            "could not create a new factory, after sleeping 15 seconds", excp0);
+                }
+    
             }
             
             String inputStr = null;
@@ -75,21 +87,30 @@ class MqClient extends MQClientBase {
                 }
                 
                 try {
+                    if (publishToShell == null ) {
+                        publishToShell = PublishToShell.getPublishToShell(uuid);
+                    }
                     publishToShell.publish( inputStr );
-                    retryCount = 0;
                 }
                 catch (ClientMqException excp) {
-                    ++retryCount;
-    
                     logger.logException( "MqClient", "run",
                             "cannot publish to a MQ queue", excp );
-    
-                    if (retryCount == 3) {
-                        standardInput.cleanUp();
-                        publishToShell.cleanUp();
-        
-                        return;
+                    
+                    try {
+                        threadCommand.sleep(15000 );
                     }
+                    catch ( Exception excp1 ) {
+                        // do nothing
+                    }
+    
+                    try {
+                        publishToShell = PublishToShell.getPublishToShell(uuid);
+                    }
+                    catch ( Exception excp0 ) {
+                        logger.logException( "MqClient", "run",
+                                "could not create a new factory, after sleeping 15 seconds", excp0);
+                    }
+    
                 }
             }
     

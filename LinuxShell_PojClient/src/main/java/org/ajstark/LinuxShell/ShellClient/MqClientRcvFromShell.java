@@ -38,7 +38,7 @@ public class MqClientRcvFromShell extends MQClientBase {
         ShellStandardInputFactory factory = ShellStandardInputFactory.getFactory();
     
     
-        receiveFromShell = ReceiveFromShell.getReceiveFromShell( outputType, uuid );
+        receiveFromShell = null;
     
         threadCommand = new Thread( this );
         threadCommand.start();
@@ -49,17 +49,38 @@ public class MqClientRcvFromShell extends MQClientBase {
         boolean continueLooping = true;
         while ( continueLooping ) {
             try {
+                if ( receiveFromShell == null ) {
+                    receiveFromShell = ReceiveFromShell.getReceiveFromShell( outputType, uuid );
+                }
                 String outStr = receiveFromShell.consume();
-                System.out.println("" + outStr);
                 
-                if ( outStr.compareTo("END") == 0 ) {
-                    publisherToShell.setDoNotPublishInput();
-                    continueLooping = false;
+                if ( outStr != null ) {
+                    System.out.println("" + outStr);
+    
+                    if (outStr.compareTo("END") == 0) {
+                        publisherToShell.setDoNotPublishInput();
+                        continueLooping = false;
+                    }
                 }
             }
             catch (ClientMqException excp) {
                 logger.logException("MqClientRcvFromShell", "run",
                         "cannot read from a MQ queue", excp);
+    
+                try {
+                    threadCommand.sleep(15000 );
+                }
+                catch ( Exception excp1 ) {
+                    // do nothing
+                }
+    
+                try {
+                    receiveFromShell = ReceiveFromShell.getReceiveFromShell( outputType, uuid );
+                }
+                catch ( Exception excp0 ) {
+                    logger.logException( "MqClientRcvFromShell", "run",
+                            "could not create a new factory, after sleeping 15 seconds", excp0);
+                }
             }
         }
         

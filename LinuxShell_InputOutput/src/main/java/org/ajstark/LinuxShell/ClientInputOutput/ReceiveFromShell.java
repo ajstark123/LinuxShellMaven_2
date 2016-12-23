@@ -43,8 +43,21 @@ public class ReceiveFromShell {
     public String consume() throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
+        if (consumer == null) {
+            logger.logError("ReceiveFromShell", "consume",
+                    "cannot consume from queue" );
+    
+            ClientMqException inOutExcp = new ClientMqException("cannot consume from queue");
+
+            throw inOutExcp;
+        }
+        
         try {
             InputOutputData inputOutPutData = consumer.getInput();
+            if (inputOutPutData == null) {
+                return null;
+            }
+            
             return inputOutPutData.getData();
         }
         catch (MqException excp) {

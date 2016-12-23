@@ -47,7 +47,16 @@ public class PublishToShell {
     
     public void publish( String str ) throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
+    
+        if ( publisher == null) {
+            logger.logError( "PublishToShell", "publish",
+                    "cannot publish to queue" );
+    
+            ClientMqException inOutExcp = new ClientMqException( "cannot publish to queue" );
 
+            throw inOutExcp;
+        }
+        
         try {
             publisher.publish(str);
         }
