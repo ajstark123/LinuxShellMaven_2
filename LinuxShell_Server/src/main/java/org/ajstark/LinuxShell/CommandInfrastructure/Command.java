@@ -14,5 +14,9 @@ public interface Command extends Runnable {
     public String getCommandStrBeingParsed();
 
     public Thread getThreadCommand();
-
+    
+    public void setThreadName( String threadName );
+    
+    public void setParentThreadGroup( ThreadGroup parentThreadGroup );
+    
 }

@@ -32,6 +32,7 @@ public class LinuxShellServer {
             return;
         }
     
+    
         logger.logInfo( "LinuxShellServer", "main", "test of writing an error message to a file");
 
         System.out.println( "LinuxShell Version: " + LinuxShell.getVersion() );
@@ -44,7 +45,7 @@ public class LinuxShellServer {
 
         try {
 
-            LinuxShell shell = new LinuxShell();
+            LinuxShell shell = new LinuxShell( mainThreadGroup );
             boolean     continueProcessing       = true;
 
             while ( continueProcessing ) {
@@ -75,19 +76,41 @@ public class LinuxShellServer {
             excp.printStackTrace();
         }
     
-        
+    
+        MqConnection mqConnection = null;
         try {
-            MqConnection mqConnection = MqConnection.getMqConnection();
-            mqConnection.close();
+            mqConnection = MqConnection.getMqConnection();
+            mqConnection.closeAndShutdown();
         }
         catch( MqException excp ) {
-            logger.logException( "LinuxShellServer", "main",  "can not close connection", excp );
+            logger.logException( "LinuxShellServer", "main",  "can not close connection andshutdown the executor", excp );
+            
+            System.err.println( "can not close connection andshutdown the executor" );
+            excp.printStackTrace( System.err );
+            System.err.flush();
         }
+    
+        
+        if ( mqConnection != null ) {
+            logger.logInfo("LinuxShellServer", "main", "is mqConnection still open: " + mqConnection.isConnectionOpen());
+            System.err.println( "\n\nis mqConnection still open: " + mqConnection.isConnectionOpen());
+            System.err.flush();
+        }
+    
+    
+    
+    
     
         logger.logInfo( "LinuxShellServer", "main", "end of method call");
         logger.shutdown();
     
         System.err.println( "end of method call" );
+        System.err.flush();
+    
+    
+        ThreadGroupPrint.printThreadgroup( mainThreadGroup );
+        
+        
         
         System.exit( 0 );
     }

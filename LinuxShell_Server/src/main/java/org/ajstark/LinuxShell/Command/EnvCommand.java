@@ -6,6 +6,7 @@ import org.ajstark.LinuxShell.InputOutput.StandardOut;
 
 import org.ajstark.LinuxShell.CommandInfrastructure.BaseCommand;
 import org.ajstark.LinuxShell.CommandInfrastructure.CommandParsingException;
+import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.*;
@@ -22,6 +23,11 @@ public class EnvCommand extends BaseCommand {
     private EnvironmentVariables envVar;
 
     public void run() {
+        LinuxShellLogger logger         = LinuxShellLogger.getLogger();
+        Thread           threadCommand  = Thread.currentThread();
+        String           tempThreadName = threadCommand.getName();
+        logger.logInfo( "EnvCommand", "run", "Start of thread: " + tempThreadName );
+        
         StandardOut standardOut              = getStandardOutput();
 
         int               lengthOfLongestKey =  envVar.getLengthLongestKey() + 2;
@@ -52,6 +58,9 @@ public class EnvCommand extends BaseCommand {
         if ( stdErr != null ) {
             stdErr.put(errMsgObj);
         }
+    
+        logger.logInfo( "EnvCommand", "run", "End of thread: " + tempThreadName );
+    
     }
 
     public void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException {

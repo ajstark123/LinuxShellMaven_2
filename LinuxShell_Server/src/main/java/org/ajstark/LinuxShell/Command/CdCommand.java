@@ -3,10 +3,13 @@ package org.ajstark.LinuxShell.Command;
 import org.ajstark.LinuxShell.CommandInfrastructure.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.EnvironmentVariables;
 import org.ajstark.LinuxShell.InputOutput.*;
+import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.util.*;
 import java.io.*;
+
+
 
 /**
  * Created by Albert on 11/6/16.
@@ -18,6 +21,10 @@ import java.io.*;
 public class CdCommand extends ParametersFollowedByFileNameCommand {
 
     public void run() {
+        LinuxShellLogger logger = LinuxShellLogger.getLogger();
+        Thread threadCommand = Thread.currentThread();
+        String tempThreadName = threadCommand.getName();
+        logger.logInfo( "CdCommand", "run", "Start of thread: " + tempThreadName );
     
         StandardOut     stdOut = getStandardOutput();
         InputOutputData data    = new InputOutputData(  );
@@ -30,6 +37,8 @@ public class CdCommand extends ParametersFollowedByFileNameCommand {
         if ( stdErr != null ) {
             stdErr.put(errMsgObj);
         }
+    
+        logger.logInfo( "CdCommand", "run", "End of thread: " + tempThreadName );
     }
 
     public void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException {

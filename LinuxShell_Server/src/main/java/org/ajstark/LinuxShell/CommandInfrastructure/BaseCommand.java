@@ -6,6 +6,8 @@ import org.ajstark.LinuxShell.ShellInputOutput.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.ajstark.LinuxShell.Logger.*;
+
 /**
  * Created by Albert on 11/5/16.
  *
@@ -32,9 +34,13 @@ public abstract class BaseCommand implements Command {
     private ArrayList<String> commandStrList;
 
     private Thread               threadCommand;
+    private ThreadGroup          parentThreadGroup;
+    private ThreadGroup          cmdThreadGroup;
+    private String               threadName;
     
     private ShellStandardError  shellStandardError;
     
+    private LinuxShellLogger logger;
     
     public abstract void parse( EnvironmentVariables envVar, boolean stdInFromPipe ) throws CommandParsingException;
 
@@ -42,17 +48,25 @@ public abstract class BaseCommand implements Command {
 
 
     protected BaseCommand () {
+        logger = LinuxShellLogger.getLogger();
         threadCommand = null;
     }
 
 
     public void execute( ) {
-        threadCommand          = new Thread(this);
+        
+        
+        cmdThreadGroup = new ThreadGroup( parentThreadGroup, "Group " + threadName );
+        threadCommand          = new Thread( cmdThreadGroup,this, threadName );
         threadCommand.start();
     }
 
 
     public void run() {
+        String tempThreadName = threadCommand.getName();
+        logger.logInfo( "BaseCommand", "run", "Start of thread: " + tempThreadName );
+        
+        
         StandardOut     stdOut = getStandardOutput();
         if ( stdOut != null  ) {
             processDataFromStardInput();
@@ -66,6 +80,9 @@ public abstract class BaseCommand implements Command {
             InputOutputData    errMsgObj = new InputOutputData(  );
             stdErr.put(errMsgObj);
         }
+    
+        logger.logInfo( "BaseCommand", "run", "End of thread: " + tempThreadName );
+    
     }
 
     /*
@@ -160,6 +177,18 @@ public abstract class BaseCommand implements Command {
     
     public ShellStandardError getShellStandardError( ) {
         return shellStandardError;
+    }
+    
+    public void setParentThreadGroup( ThreadGroup parentThreadGroup ) {
+        this.parentThreadGroup = parentThreadGroup;
+     }
+     
+    public ThreadGroup getParentThreadGroup() {
+        return parentThreadGroup;
+    }
+    
+    public void setThreadName( String threadName ) {
+        this.threadName = threadName;
     }
     
 }

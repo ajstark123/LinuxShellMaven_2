@@ -32,9 +32,15 @@ public class CommandParser {
     
     private LinuxShellLogger    logger;
     
+    private ThreadGroup  mainThreadGroup;
+    
     
     public CommandParser( EnvironmentVariables envVar,
-                          InputOutputData       inputOutputData ) throws ShellException {
+                          InputOutputData       inputOutputData,
+                          ThreadGroup           mainThreadGroup ) throws ShellException {
+        
+        this.mainThreadGroup = mainThreadGroup;
+        
         this.logger = LinuxShellLogger.getLogger();
 
         this.commandListString = inputOutputData.getData();
@@ -94,7 +100,7 @@ public class CommandParser {
                 }
             }
     
-            CommandCollection cmdCol = new CommandCollection(commandListString, commandList);
+            CommandCollection cmdCol = new CommandCollection(commandListString, commandList, mainThreadGroup);
     
             return cmdCol;
         }
@@ -145,7 +151,7 @@ public class CommandParser {
 
         ArrayList<String> commandParameter = tokenizeByWhiteSpace( commandStrEnvVar );
 
-        CommandFactory factory = CommandFactory.getInstance();
+        CommandFactory factory = CommandFactory.getInstance( mainThreadGroup );
 
         BaseCommand cmd = factory.getCommand( commandStrEnvVar, commandParameter, uuid) ;
                                               
@@ -161,7 +167,7 @@ public class CommandParser {
                    UnknowCommandException {
         // check to see if this command has any commands pipped together
     
-        CommandFactory factory = CommandFactory.getInstance();
+        CommandFactory factory = CommandFactory.getInstance( mainThreadGroup );
     
         ArrayList<String> arrCommandPipe = tokenizeByDeliminator(commandStr, "|");
     
@@ -289,9 +295,5 @@ public class CommandParser {
 
         return arrList;
     }
-
-
-
-
 
 }

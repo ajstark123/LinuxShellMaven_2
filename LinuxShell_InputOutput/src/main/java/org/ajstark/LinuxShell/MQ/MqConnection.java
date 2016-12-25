@@ -199,7 +199,9 @@ public class MqConnection implements ShutdownListener {
         if (connection != null) {
             try {
                 if (connection.isOpen()) {
-                    connection.close();
+                    if (connection.isOpen()) {
+                        connection.close();
+                    }
                 }
                 connection = null;
     
@@ -208,6 +210,7 @@ public class MqConnection implements ShutdownListener {
                 }
             }
             catch (Exception excp) {
+                connection = null;
     
                 if (inOutExcp != null) {
                     throw inOutExcp;
@@ -296,6 +299,8 @@ public class MqConnection implements ShutdownListener {
         factory.setVirtualHost( MqEnvProperties.getVirtualHost() );
         factory.setHost(        MqEnvProperties.getMqBrokerHost() );
     
+        factory.setAutomaticRecoveryEnabled( false );
+        
         // Disable Topology recovery.  Topology recovery involves recovery of exchanges, queues, bindings and
         // consumers.
         factory.setTopologyRecoveryEnabled( false );
@@ -345,6 +350,15 @@ public class MqConnection implements ShutdownListener {
                 logger.logException( "MqConnection", "stop",
                         "cannot close MQ connection", excp);
         }
+    }
+    
+    public void closeAndShutdown() throws MqException {
+        executor.shutdown();
+        close();
+    }
+    
+    public boolean isConnectionOpen() {
+        return connection.isOpen();
     }
     
     

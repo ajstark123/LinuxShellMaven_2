@@ -7,6 +7,7 @@ import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import org.ajstark.LinuxShell.MQ.*;
+import org.ajstark.LinuxShell.Util.*;
 
 import java.util.*;
 
@@ -19,6 +20,7 @@ import java.util.*;
  */
 public class LinuxShell  implements Runnable {
     private Thread                    threadCommand;
+    private ThreadGroup               mainThreadGroup;
  
     private CurrentDirectory          currentDirectory;
     private ShellStandardInput        standardInput;
@@ -34,7 +36,8 @@ public class LinuxShell  implements Runnable {
      * @version $Id$
      *
      */
-    public LinuxShell( ) {
+    public LinuxShell( ThreadGroup  mainThreadGroup ) {
+        this.mainThreadGroup = mainThreadGroup;
     
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
@@ -62,7 +65,8 @@ public class LinuxShell  implements Runnable {
             envVariables.put( "$OS", value );
         }
     
-        threadCommand = new Thread(this );
+        
+        threadCommand = new Thread( mainThreadGroup, this, "Linux Shell" );
         threadCommand.start();
     }
 
@@ -156,7 +160,7 @@ public class LinuxShell  implements Runnable {
         CommandParser cmdParser = null;
         Command       cmd       = null;
         try {
-            cmdParser = new CommandParser(currentDirectory, inputOutputData );
+            cmdParser = new CommandParser(currentDirectory, inputOutputData, mainThreadGroup );
             cmd       = cmdParser.parse();
         }
         catch ( ShellException excp ) {

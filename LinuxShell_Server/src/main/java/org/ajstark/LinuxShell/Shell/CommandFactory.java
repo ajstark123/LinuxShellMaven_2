@@ -18,9 +18,12 @@ class CommandFactory {
 
     private HashMap<String, String> map;
 
+    private ThreadGroup mainThreadGroup;
+    
     // prevents other objects from instaintiating  CommandFactory Objects
-    private CommandFactory() {
-
+    private CommandFactory( ThreadGroup mainThreadGroup ) {
+        this.mainThreadGroup = mainThreadGroup;
+        
         map = new HashMap<String, String>();
 
         map.put( "LS",        "org.ajstark.LinuxShell.Command.LsCommand" );
@@ -33,9 +36,9 @@ class CommandFactory {
     }
 
 
-    static CommandFactory getInstance() {
+    static CommandFactory getInstance( ThreadGroup mainThreadGroup ) {
         if (factory == null) {
-            factory = new CommandFactory();
+            factory = new CommandFactory( mainThreadGroup );
         }
 
         return factory;
@@ -73,7 +76,7 @@ class CommandFactory {
             }
             
             cmd.setShellStandardError(  shellStandardError  );
-            
+            cmd.setParentThreadGroup( mainThreadGroup );
         } catch (Exception excp) {
             UnknowCommandException missingCmdExcp = new UnknowCommandException( commandStrBeingParsed, commandName,
                                                                                 className );

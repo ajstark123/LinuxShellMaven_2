@@ -2,6 +2,7 @@ package org.ajstark.LinuxShell.Command;
 
 import org.ajstark.LinuxShell.InputOutput.*;
 import org.ajstark.LinuxShell.CommandInfrastructure.*;
+import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
 
 import java.text.*;
@@ -84,6 +85,12 @@ public class LsCommand extends ParametersFollowedByFileNameCommand {
 
 
     public void run() {
+        LinuxShellLogger logger         = LinuxShellLogger.getLogger();
+        Thread           threadCommand  = Thread.currentThread();
+        String           tempThreadName = threadCommand.getName();
+        logger.logInfo( "LsCommand", "run", "Start of thread: " + tempThreadName );
+        
+        
         StandardOut standardOut              = getStandardOutput();
 
         processFilesNames( standardOut );
@@ -96,6 +103,8 @@ public class LsCommand extends ParametersFollowedByFileNameCommand {
         if ( stdErr != null ) {
             stdErr.put(errMsgObj);
         }
+    
+        logger.logInfo( "LsCommand", "run", "End of thread: " + tempThreadName );
     }
 
 
