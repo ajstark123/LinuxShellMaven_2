@@ -89,7 +89,7 @@ public class LinuxShellServer {
     
         System.err.println( "end of method call" );
         
-        // System.exit( 0 );
+        System.exit( 0 );
     }
     
     public static String getVersion() {

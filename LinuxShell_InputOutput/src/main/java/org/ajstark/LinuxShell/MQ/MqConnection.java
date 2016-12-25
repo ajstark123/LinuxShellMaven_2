@@ -296,6 +296,10 @@ public class MqConnection implements ShutdownListener {
         factory.setVirtualHost( MqEnvProperties.getVirtualHost() );
         factory.setHost(        MqEnvProperties.getMqBrokerHost() );
     
+        // Disable Topology recovery.  Topology recovery involves recovery of exchanges, queues, bindings and
+        // consumers.
+        factory.setTopologyRecoveryEnabled( false );
+    
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         connection = null;
