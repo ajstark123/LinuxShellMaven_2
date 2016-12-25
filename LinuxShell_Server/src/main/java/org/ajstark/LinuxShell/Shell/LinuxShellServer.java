@@ -89,18 +89,7 @@ public class LinuxShellServer {
             excp.printStackTrace( System.err );
             System.err.flush();
         }
-    
         
-        if ( mqConnection != null ) {
-            logger.logInfo("LinuxShellServer", "main", "is mqConnection still open: " + mqConnection.isConnectionOpen());
-            System.err.println( "\n\nis mqConnection still open: " + mqConnection.isConnectionOpen());
-            System.err.flush();
-        }
-    
-    
-    
-    
-    
         logger.logInfo( "LinuxShellServer", "main", "end of method call");
         logger.shutdown();
     
@@ -108,9 +97,7 @@ public class LinuxShellServer {
         System.err.flush();
     
     
-        ThreadGroupPrint.printThreadgroup( mainThreadGroup );
-        
-        
+        // ThreadGroupPrint.printThreadgroup( mainThreadGroup );
         
         System.exit( 0 );
     }
