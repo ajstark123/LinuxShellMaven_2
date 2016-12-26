@@ -28,8 +28,9 @@ export LOG4J_CORE=$LOGGER_LIB/log4j-core-2.7.jar
 #
 # Logger Configuration
 #
-export LOGGER_GONFIG_FILE=$LIB_HOME/properties/LoggerClient.properties
+export LOGGER_GONFIG_FILE=$LIB_HOME/properties/Logger.properties
 export LOGGER_CONFIG="-DLoggerConfigurationFile=$LOGGER_GONFIG_FILE"
+export LoggerFileName="../logs/ClientPojMq"
 
 #
 #  RABBIT MQ JAR
@@ -51,6 +52,4 @@ export SLF4=$SLF4_LIB/slf4j-api-1.7.22.jar:$SLF4_LIB/slf4j-simple-1.7.22.jar
 export MQ_GONFIG_FILE=$LIB_HOME/properties/MQ.properties
 export MQ_CONFIG="-DMqConfigurationFile=$MQ_GONFIG_FILE"
 
-
-
-java $LOGGER_CONFIG -DInputOutputType=MQ $MQ_CONFIG -classpath $CLIENT_LIB:$IN_OUT_LIB:$SLF4:$RABBIT_MQ$SERVER_LIB:$IN_OUT_LIB:$RABBIT_MQ:$LOG4J_API:$LOG4J_CORE   org.ajstark.LinuxShell.ShellClient.PojMqClient
+java -DLoggerFileName=$LoggerFileName $LOGGER_CONFIG -DInputOutputType=MQ $MQ_CONFIG -classpath $CLIENT_LIB:$IN_OUT_LIB:$SLF4:$RABBIT_MQ$SERVER_LIB:$IN_OUT_LIB:$RABBIT_MQ:$LOG4J_API:$LOG4J_CORE   org.ajstark.LinuxShell.ShellClient.PojMqClient

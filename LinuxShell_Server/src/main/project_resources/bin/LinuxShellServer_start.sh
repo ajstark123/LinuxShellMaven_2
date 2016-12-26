@@ -26,6 +26,7 @@ export LOG4J_CORE=$LOGGER_LIB/log4j-core-2.7.jar
 #
 export LOGGER_GONFIG_FILE=$LIB_HOME/properties/Logger.properties
 export LOGGER_CONFIG="-DLoggerConfigurationFile=$LOGGER_GONFIG_FILE"
+export LoggerFileName="../logs/LinuxShell_Server"
 
 #
 #  RABBIT MQ JAR
@@ -47,6 +48,6 @@ export MQ_GONFIG_FILE=$LIB_HOME/properties/MQ.properties
 export MQ_CONFIG="-DMqConfigurationFile=$MQ_GONFIG_FILE"
 
 
-java $LOGGER_CONFIG -DInputOutputType=MQ_CONSOLE $MQ_CONFIG -classpath $SERVER_LIB:$IN_OUT_LIB:$SLF4:$RABBIT_MQ:$LOG4J_API:$LOG4J_CORE  org.ajstark.LinuxShell.Shell.LinuxShellServer
+java -DLoggerFileName=$LoggerFileName $LOGGER_CONFIG -DInputOutputType=MQ_CONSOLE $MQ_CONFIG -classpath $SERVER_LIB:$IN_OUT_LIB:$SLF4:$RABBIT_MQ:$LOG4J_API:$LOG4J_CORE  org.ajstark.LinuxShell.Shell.LinuxShellServer
 
 
