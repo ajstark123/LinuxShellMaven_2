@@ -1,6 +1,7 @@
 package org.ajstark.LinuxShell.ShellClient;
 
 import org.ajstark.LinuxShell.ClientInputOutput.*;
+import org.ajstark.LinuxShell.InputOutput.*;
 import org.ajstark.LinuxShell.Logger.*;
 import org.ajstark.LinuxShell.MQ.*;
 import org.ajstark.LinuxShell.ShellInputOutput.*;
@@ -52,13 +53,20 @@ public class MqClientRcvFromShell extends MQClientBase {
                 if ( receiveFromShell == null ) {
                     receiveFromShell = ReceiveFromShell.getReceiveFromShell( outputType, uuid );
                 }
-                String outStr = receiveFromShell.consume();
                 
-                if ( outStr != null ) {
-                    System.out.println("" + outStr);
+                InputOutputData inputOutputData = receiveFromShell.consume();
+                
+                if ( inputOutputData != null ) {
+                    String outStr = inputOutputData.getData();
+                    
+                    if ( inputOutputData.isPrompt() ) {
+                        System.out.print("" + outStr);
+                    }
+                    else {
+                        System.out.println("" + outStr);
+                    }
     
                     if (outStr.compareTo("END") == 0) {
-                        publisherToShell.setDoNotPublishInput();
                         continueLooping = false;
                     }
                 }

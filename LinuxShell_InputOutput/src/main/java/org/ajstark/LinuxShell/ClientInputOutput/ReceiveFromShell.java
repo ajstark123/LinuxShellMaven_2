@@ -40,7 +40,7 @@ public class ReceiveFromShell {
         return receiveFromShell;
     }
     
-    public String consume() throws ClientMqException {
+    public InputOutputData consume() throws ClientMqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
         
         if (consumer == null) {
@@ -58,7 +58,7 @@ public class ReceiveFromShell {
                 return null;
             }
             
-            return inputOutPutData.getData();
+            return inputOutPutData;
         }
         catch (MqException excp) {
             logger.logException("ReceiveFromShell", "consume",

@@ -49,7 +49,8 @@ class MqClient extends MQClientBase {
     
     public void run() {
         boolean continueLooping = true;
-        
+    
+        System.out.print( "<<  " );
         int retryCount = 0;
         while (  continueLooping  ) {
             InputOutputData inputOutputData = null;
@@ -78,44 +79,47 @@ class MqClient extends MQClientBase {
             String inputStr = null;
             if ( inputOutputData != null ) {
                 inputStr = inputOutputData.getData();
-                
-                if ( doNotPublishInput ) {
+    
+                if (doNotPublishInput) {
                     standardInput.cleanUp();
                     publishToShell.cleanUp();
-    
+        
                     return;
                 }
-                
-                try {
-                    if (publishToShell == null ) {
-                        publishToShell = PublishToShell.getPublishToShell(uuid);
-                    }
-                    publishToShell.publish( inputStr );
+    
+    
+                if ((inputStr.compareTo("END") == 0) || (inputStr.compareTo("KILL THE FUCKING SERVER") == 0)) {
+                    continueLooping = false;
                 }
-                catch (ClientMqException excp) {
-                    logger.logException( "MqClient", "run",
-                            "cannot publish to a MQ queue", excp );
-                    
-                    try {
-                        threadCommand.sleep(15000 );
-                    }
-                    catch ( Exception excp1 ) {
-                        // do nothing
-                    }
     
+                if (inputStr.compareTo("END") != 0) {
                     try {
-                        publishToShell = PublishToShell.getPublishToShell(uuid);
+                        if (publishToShell == null) {
+                            publishToShell = PublishToShell.getPublishToShell(uuid);
+                        }
+                        publishToShell.publish(inputStr);
                     }
-                    catch ( Exception excp0 ) {
-                        logger.logException( "MqClient", "run",
-                                "could not create a new factory, after sleeping 15 seconds", excp0);
+                    catch (ClientMqException excp) {
+                        logger.logException("MqClient", "run",
+                                "cannot publish to a MQ queue", excp);
+            
+                        try {
+                            threadCommand.sleep(15000);
+                        }
+                        catch (Exception excp1) {
+                            // do nothing
+                        }
+            
+                        try {
+                            publishToShell = PublishToShell.getPublishToShell(uuid);
+                        }
+                        catch (Exception excp0) {
+                            logger.logException("MqClient", "run",
+                                    "could not create a new factory, after sleeping 15 seconds", excp0);
+                        }
+            
                     }
-    
                 }
-            }
-    
-            if ( (inputStr.compareTo("END") == 0) || (inputStr.compareTo("KILL THE FUCKING SERVER") == 0) ) {
-                continueLooping = false;
             }
         }
         

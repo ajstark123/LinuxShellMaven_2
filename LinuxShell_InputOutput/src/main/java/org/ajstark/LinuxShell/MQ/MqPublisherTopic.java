@@ -21,14 +21,12 @@ public class MqPublisherTopic {
     }
     
     
-    public void publish(  String inOutDataStr ) throws MqException {
+    public void publish(  InputOutputData inOutData ) throws MqException {
         LinuxShellLogger logger = LinuxShellLogger.getLogger();
     
         ByteArrayOutputStream bos            = null;
         byte[]                inOutDataBytes = null;
         try {
-            InputOutputData inOutData = new InputOutputData(inOutDataStr);
-    
             bos = new ByteArrayOutputStream();
             ObjectOutput out = new ObjectOutputStream(bos);
             out.writeObject(inOutData);

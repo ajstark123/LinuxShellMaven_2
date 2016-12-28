@@ -26,7 +26,6 @@ public class ShellStandardInputConsole implements ShellStandardInput {
         String inputFromTerminal =  " ";
         
         try {
-            System.out.print( ">>  " );
             inputFromTerminal = bufferedReader.readLine();
             inputFromTerminal = inputFromTerminal.trim();
         }

@@ -22,13 +22,7 @@ public class ShellStandardErrorMq  implements ShellStandardError {
     
     
     private void sendError( String outStr ) {
-        try {
-            publisher.publish(outStr);
-        }
-        catch ( Exception excp ) {
-            logger.logException( "ShellStandardErrorMq", "sendError",
-                    "can not publish to a queue", excp);
-        }
+        // do nothing
     }
     
     public String getUuidStr() {
@@ -40,9 +34,13 @@ public class ShellStandardErrorMq  implements ShellStandardError {
             cleanUp();
         }
         else {
-            String outStr = outData.getData();
-    
-            sendError(outStr);
+            try {
+                publisher.publish(outData);
+            }
+            catch ( Exception excp ) {
+                logger.logException( "ShellStandardErrorMq", "sendError",
+                        "can not publish to a queue", excp);
+            }
         }
     }
     

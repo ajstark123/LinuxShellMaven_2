@@ -27,7 +27,10 @@ import org.ajstark.LinuxShell.Logger.*;
 public abstract class BaseCommand implements Command {
     private StandardInput input;
     private StandardOut   output;
-
+    
+    // the number of command groups that will be sending end of output indicators.
+    private int           commandGroups;
+    private int           countingCommandGroups;
 
     private String commandStrBeingParsed;
 
@@ -48,25 +51,25 @@ public abstract class BaseCommand implements Command {
 
 
     protected BaseCommand () {
-        logger = LinuxShellLogger.getLogger();
+        logger        = LinuxShellLogger.getLogger();
         threadCommand = null;
+        commandGroups = 1;
     }
 
 
     public void execute( ) {
         
-        
         cmdThreadGroup = new ThreadGroup( parentThreadGroup, "Group " + threadName );
         threadCommand          = new Thread( cmdThreadGroup,this, threadName );
         threadCommand.start();
+        
     }
 
 
     public void run() {
         String tempThreadName = threadCommand.getName();
         logger.logInfo( "BaseCommand", "run", "Start of thread: " + tempThreadName );
-        
-        
+    
         StandardOut     stdOut = getStandardOutput();
         if ( stdOut != null  ) {
             processDataFromStardInput();
@@ -82,7 +85,6 @@ public abstract class BaseCommand implements Command {
         }
     
         logger.logInfo( "BaseCommand", "run", "End of thread: " + tempThreadName );
-    
     }
 
     /*
@@ -97,34 +99,60 @@ public abstract class BaseCommand implements Command {
         StandardInput standardInput          = getStandardInput();
         boolean     continueProcessing       = true;
 
+        int countingCommandGroups = 0;
         while ( continueProcessing ) {
             if (standardInput != null) {
-                synchronized (standardInput) {
-                    try {
-                        standardInput.wait();
-                        ArrayList<InputOutputData> dataArr = standardInput.get();
-                        Iterator<InputOutputData> iter = dataArr.iterator();
-
-                        while (iter.hasNext()) {
-                            InputOutputData data = iter.next();
-
-                            processCommandData(data);
-
-                            if (data.isLastDataSent()) {
-                                // this is the last data item to be piped to this command.
-                                // we need to stop the looping and let the thread die.
-                                continueProcessing = false;
-                            }
-
+                ArrayList<InputOutputData> dataArr = standardInput.get();
+                if ( (dataArr != null) && (dataArr.size() > 0) ) {
+                    continueProcessing = processArrayData( dataArr );
+                }
+                else {
+                    synchronized (standardInput) {
+                        try {
+                            standardInput.wait();
+                            dataArr = standardInput.get();
+                            continueProcessing = processArrayData( dataArr );
                         }
-                    } catch (InterruptedException excp) {
-                        continueProcessing = false;
+                        catch (InterruptedException excp) {
+                            continueProcessing = false;
+                        }
                     }
                 }
             }
         }
     }
 
+    private boolean processArrayData( ArrayList<InputOutputData> dataArr ) {
+        //boolean continueProcessing = true;
+        Iterator<InputOutputData> iter = dataArr.iterator();
+    
+        while (iter.hasNext()) {
+            InputOutputData data = iter.next();
+        
+            processCommandData(data);
+        
+            if (data.isLastDataSent()) {
+                ++countingCommandGroups;
+            
+                if ( countingCommandGroups == commandGroups ) {
+                    // this is the last data item to be piped to this command.
+                    // we need to stop the looping and let the thread die.
+                    //continueProcessing = false;
+                    
+                    StandardOut     stdOut = getStandardOutput();
+                    if ( stdOut != null  ) {
+                        InputOutputData promptData    = new InputOutputData( "<< ", true );
+                        stdOut.put( promptData );
+                    }
+                    
+                    return false;
+                }
+            }
+        
+        }
+        
+        return true;
+    }
 
     public void setStandardInput( StandardInput input ) {
         //
@@ -189,6 +217,10 @@ public abstract class BaseCommand implements Command {
     
     public void setThreadName( String threadName ) {
         this.threadName = threadName;
+    }
+    
+    public void setCommandGroup( int commandGroups ) {
+        this.commandGroups = commandGroups;
     }
     
 }

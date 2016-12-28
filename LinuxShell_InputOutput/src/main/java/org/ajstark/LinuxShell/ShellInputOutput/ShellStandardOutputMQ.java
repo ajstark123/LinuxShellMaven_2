@@ -21,13 +21,7 @@ public class ShellStandardOutputMQ implements ShellStandardOutput {
     
     
     private void sendOutput( String outStr ) {
-        try {
-            publisher.publish(outStr);
-        }
-        catch ( Exception excp ) {
-            logger.logException( "ShellStandardOutputMQ", "sendOutput",
-                    "can not publish to a queue", excp);
-         }
+        // do nothing
     }
     
     public String getUuidStr() {
@@ -39,9 +33,13 @@ public class ShellStandardOutputMQ implements ShellStandardOutput {
             cleanUp();
         }
         else {
-            String outStr = outData.getData();
-    
-            sendOutput( outStr );
+            try {
+                publisher.publish(outData);
+            }
+            catch ( Exception excp ) {
+                logger.logException( "ShellStandardOutputMQ", "sendOutput",
+                        "can not publish to a queue", excp);
+            }
         }
     }
     

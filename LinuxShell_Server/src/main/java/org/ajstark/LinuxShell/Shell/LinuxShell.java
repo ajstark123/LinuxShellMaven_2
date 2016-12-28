@@ -83,6 +83,7 @@ public class LinuxShell  implements Runnable {
             
             if ( inputOutputData != null ) {
                 String inputStr = inputOutputData.getData();
+                
                 if (inputStr.compareTo("KILL THE FUCKING SERVER") == 0) {
                     continueLooping = false;
                 }

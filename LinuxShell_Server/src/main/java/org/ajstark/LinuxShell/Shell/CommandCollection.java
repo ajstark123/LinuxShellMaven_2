@@ -2,6 +2,7 @@ package org.ajstark.LinuxShell.Shell;
 
 import org.ajstark.LinuxShell.CommandInfrastructure.BaseCommand;
 import org.ajstark.LinuxShell.CommandInfrastructure.Command;
+import org.ajstark.LinuxShell.Logger.*;
 
 
 import java.util.*;
@@ -18,19 +19,27 @@ public class CommandCollection implements Command {
     
     private String commandListString;
 
-    private ArrayList<BaseCommand> commandList;
+    private ArrayList<Command> commandList;
 
     private Thread      threadCommand;
     private ThreadGroup mainThreadGroup;
     private ThreadGroup collectionThreadGroup;
     private String      threadName;
-
-    CommandCollection( String commandListString, ArrayList<BaseCommand> commandList, ThreadGroup mainThreadGroup  ) {
+    private boolean     calledFromMainLinuxShell;
+    
+    CommandCollection( String commandListString, ArrayList<Command> commandList, ThreadGroup mainThreadGroup  ) {
         this.commandListString = commandListString;
         this.commandList       = commandList;
         this.mainThreadGroup   = mainThreadGroup;
+        this.calledFromMainLinuxShell = false;
     }
-
+    
+    CommandCollection( String commandListString, ArrayList<Command> commandList, ThreadGroup mainThreadGroup, boolean     calledFromMainLinuxShell  ) {
+        this.commandListString = commandListString;
+        this.commandList       = commandList;
+        this.mainThreadGroup   = mainThreadGroup;
+        this.calledFromMainLinuxShell = calledFromMainLinuxShell;
+    }
 
     public void execute() {
         
@@ -43,14 +52,26 @@ public class CommandCollection implements Command {
         
         threadCommand = new Thread( collectionThreadGroup, this, threadName + " " + commandListString);
         threadCommand.start();
+        
+        if ( ! calledFromMainLinuxShell ) {
+            try {
+                threadCommand.join();
+            }
+            catch ( InterruptedException excp ) {
+                // do nothing
+            }
+        }
+        
     }
 
 
     public void run() {
+    
+        Command previousCommand = null;
         int i = 1;
-        ListIterator<BaseCommand>  iter = commandList.listIterator( commandList.size() );
-        while ( iter.hasPrevious() ) {
-            Command cmd =  iter.previous();
+        Iterator<Command>  iter = commandList.iterator();
+        while ( iter.hasNext() ) {
+            Command cmd =  iter.next();
 
             Class  classObj  = cmd.getClass();
             String className = classObj.getName();
@@ -60,39 +81,40 @@ public class CommandCollection implements Command {
                 className = className.substring( index + 1);
             }
             
-            
             String childThreadName = threadName + " child thread: " + i + " class name: " + className;
             
             cmd.setThreadName( childThreadName );
             cmd.setParentThreadGroup( collectionThreadGroup );
             
             cmd.execute( );
+            
+            if (className.compareTo( "OutputCommand") == 0) {
+                // need to force the starting of OutputCommand first
+                threadCommand.yield();
+            }
+            
+            previousCommand = cmd;
             ++i;
         }
-
-
-        iter = commandList.listIterator(commandList.size());
-        while (iter.hasPrevious()) {
-            BaseCommand cmd =  iter.previous();
-
-            Thread threadCommand = cmd.getThreadCommand();
-
-            boolean threadIsAlive = threadCommand.isAlive();
-
-            if ( threadIsAlive ) {
-                try {
-                    threadCommand.join();
-                }
-                catch ( InterruptedException excp ) {
-                    //
-                    // exception waiting for therad to end
-                    //
-                    System.out.println( "CommandCollection::run InterruptedException waiting for thread to end: \n" +
-                            cmd.getCommandStrBeingParsed() +  "\nmessage " + excp.getMessage() );
-                }
-            }
+    
+        Thread childThread = previousCommand.getThreadCommand();
+        try {
+            childThread.join();
+        }
+        catch ( InterruptedException excp ) {
+            // do nothing
         }
 
+        
+        /*
+        try {
+            threadCommand.yield();
+            threadCommand.sleep(3000);
+        }
+        catch ( InterruptedException excp ) {
+            // do nothing
+        }
+        */
     }
 
 
